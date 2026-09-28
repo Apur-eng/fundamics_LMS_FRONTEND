@@ -1,12 +1,29 @@
-# fundamics_LMS_FRONTEND
+# Fundemics LMS Mobile Application Frontend
 
-Cross-platform mobile application frontend for the **Fundamics Learning Management System (LMS)**, built with **React Native**.
+Cross-platform mobile application frontend for the **Fundemics Learning Management System (LMS)**, built with **React Native**, **TypeScript**, **Expo SDK 52**, and **React Navigation 7**.
 
 ---
 
-## 📱 Overview
+## 📱 Project Overview
 
-The **Fundamics LMS Frontend** delivers a modern, high-performance mobile learning experience for students, educators, and coaching institutions. It integrates seamlessly with the [Fundamics LMS Backend](https://github.com/Apur-eng/fundamics_LMS_BACKEND.git) to provide real-time course access, student tracking, assessments, and attendance workflows.
+The **Fundemics LMS Mobile App** delivers an institutional learning management experience for students, educators, and leadership across **Fundemics Tutorials LLP** (Lucknow, established 2014).
+
+It provides specialized, role-based workflows for:
+- **Students**: Academic profile, class attendance tracking, daily timetable, weekly board assessment scores, and official circulars.
+- **Faculty / Teachers**: Department rosters, daily batch teaching schedules, attendance logging, and priority grading queues.
+- **Administrators**: Multi-branch operational KPIs (*Triveni Nagar Flagship*, *Faizullaganj*, *Aliganj*), staff-student ratios, fee collection realization, and institutional audit trails.
+
+---
+
+## 🎨 Brand Identity & Design System
+
+The mobile application incorporates the verified visual language and design tokens of Fundemics Tutorials:
+
+- **Primary Canvas**: Institutional Deep Navy (`#0B192C` / `#060E18` / `#14253E`)
+- **Academic Accent**: Growth Emerald (`#059669` / `#10B981` / `#047857`)
+- **Honors & Distinction**: Amber Gold (`#D97706` / `#F59E0B`)
+- **Design Tokens**: Standardized 4pt/8pt grid spacing, WCAG-accessible contrast ratios, minimum 44x44pt touch targets, and authentic monogram avatar fallbacks.
+- **Theming**: Fully typed dual-palette architecture (`lightThemeColors` & `darkThemeColors`) with Light mode as default for daylight academic reading. See [src/theme/README.md](file:///d:/fundamics/fundamics_lms_frontend/src/theme/README.md).
 
 ---
 
@@ -14,26 +31,57 @@ The **Fundamics LMS Frontend** delivers a modern, high-performance mobile learni
 
 ```
 fundamics_lms_frontend/
-├── docs/                 # Project documentation and specifications
-│   ├── api/              # API contracts and schemas
-│   ├── architecture/     # Mobile app architecture and flow diagrams
-│   ├── database/         # Local storage & offline data schemas
-│   ├── decisions/        # Architecture Decision Records (ADRs)
-│   ├── requirements/     # Product and feature specifications
-│   └── security/         # Mobile security and authentication policies
-├── src/                  # React Native application source code
-│   ├── assets/           # Images, fonts, and static resources
-│   ├── components/       # Reusable UI components
-│   ├── navigation/       # Navigation stacks and screen routing
-│   ├── screens/          # Main application screens
-│   ├── services/         # API clients and network integration
-│   ├── store/            # State management (Redux / Zustand / Context)
-│   └── utils/            # Helper functions and constants
-├── tests/                # Unit, component, and E2E test suites
-├── .env.example          # Template for environment variables
-├── .gitignore            # Git ignore rules for React Native, Expo, Android, and iOS
-├── CONTRIBUTING.md       # Contribution and development guidelines
-└── README.md             # Project documentation
+├── docs/                               # Architecture, ADRs, and API documentation
+│   ├── api/API_CONTRACTS.md            # Frontend API service layer & backend contracts
+│   ├── architecture/ARCHITECTURE.md    # Mobile application architecture & navigation tree
+│   └── decisions/                      # Architecture Decision Records (ADRs)
+│
+├── src/
+│   ├── app/                            # Application root setup
+│   │   ├── navigation/                 # Role-based stacks & tab navigators
+│   │   │   ├── AuthNavigator.tsx       # Splash, Login, Forgot Password, OTP
+│   │   │   ├── StudentNavigator.tsx    # Bottom tabs for Student portal
+│   │   │   ├── TeacherNavigator.tsx    # Bottom tabs for Faculty portal
+│   │   │   ├── AdminNavigator.tsx      # Bottom tabs for Admin portal
+│   │   │   ├── RootNavigator.tsx       # Dynamic role router with theme binding
+│   │   │   └── types.ts                # Route param list definitions
+│   │   └── providers/                  # Application context providers
+│   │       ├── AuthContext.tsx         # User authentication & role manager
+│   │       └── StateProvider.tsx       # Root wrapper (SafeArea, Theme, Auth)
+│   │
+│   ├── components/                     # Reusable design system components
+│   │   ├── common/                     # Text, Button, Card, Avatar, Badge, IconButton, ModalSheet
+│   │   ├── forms/                      # Input with icons, password toggle, and error states
+│   │   └── feedback/                   # LoadingState, EmptyState, ErrorState
+│   │
+│   ├── features/                       # Modular feature domains
+│   │   ├── auth/                       # Splash, Login, ForgotPassword, OtpVerification
+│   │   ├── dashboard/                  # Student, Teacher, and Admin dashboard shells
+│   │   ├── students/                   # Future Phase 2 module placeholder
+│   │   ├── attendance/                 # Future Phase 2 module placeholder
+│   │   ├── classes/                    # Future Phase 2 module placeholder
+│   │   ├── exams/                      # Future Phase 2 module placeholder
+│   │   ├── assignments/                # Future Phase 2 module placeholder
+│   │   ├── results/                    # Future Phase 2 module placeholder
+│   │   ├── fees/                       # Future Phase 2 module placeholder
+│   │   └── notifications/              # Future Phase 2 module placeholder
+│   │
+│   ├── services/
+│   │   └── api/                        # Centralized API abstraction layer
+│   │       ├── apiClient.ts            # Network client for future FastAPI backend
+│   │       ├── mockData.ts             # Realistic institutional fixtures
+│   │       ├── authService.ts          # Authentication service interface
+│   │       └── dashboardService.ts     # Role dashboard data fetcher
+│   │
+│   ├── theme/                          # Design tokens, typography, and theme provider
+│   ├── types/                          # TypeScript contracts (Auth, API, Dashboard)
+│   └── utils/                          # Phone, email, admission no, and date formatters
+│
+├── App.tsx                             # Root component with dynamic status bar
+├── index.ts                            # Expo entry point
+├── app.json                            # Expo configuration
+├── package.json                        # Dependencies and scripts
+└── tsconfig.json                       # Strict TypeScript configuration
 ```
 
 ---
@@ -42,12 +90,8 @@ fundamics_lms_frontend/
 
 ### Prerequisites
 
-- **Node.js**: >= 18.x
-- **npm** or **yarn** or **pnpm**
-- **Mobile Development Setup**:
-  - For Android: Android Studio & Android SDK
-  - For iOS (macOS only): Xcode & CocoaPods
-  - Alternatively: Expo Go app for physical device testing
+- **Node.js**: >= 18.x (Tested with Node.js v24)
+- **npm** or **yarn**
 
 ### Installation
 
@@ -60,31 +104,65 @@ fundamics_lms_frontend/
 2. **Install dependencies**:
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
-3. **Configure environment variables**:
+3. **Verify TypeScript compilation**:
    ```bash
-   cp .env.example .env
-   ```
-   Update `.env` with your backend API URL and development credentials.
-
-4. **Start the development server**:
-   ```bash
-   npm start
-   # or
-   npx expo start
+   npm run typecheck
    ```
 
 ---
 
-## 🔗 Related Repositories
+## 🖥️ Running & Reviewing the App
 
-- **Backend Repository**: [fundamics_LMS_BACKEND](https://github.com/Apur-eng/fundamics_LMS_BACKEND.git)
+### Option 1: Web Browser (Instant Preview)
+```bash
+npm run web
+```
+Opens the application directly in your browser at `http://localhost:8081`. Press `F12` and toggle device toolbar (`Ctrl+Shift+M`) for realistic mobile dimensions.
+
+### Option 2: Physical Device (Expo Go)
+```bash
+npm start
+```
+Scan the QR code displayed in the terminal with the **Expo Go** app on Android or iOS.
+
+### Option 3: Emulator / Simulator
+- For Android: `npm run android`
+- For iOS (macOS only): `npm run ios`
+
+---
+
+## 🧪 Testing Role Perspectives
+
+On the **Login Screen**:
+1. Use the **Student**, **Faculty**, or **Admin** toggle pills at the top of the card.
+2. Tap **Sign In** directly — credentials are pre-configured to automatically load that role's dashboard.
+3. Tap the sign-out icon in any dashboard header to return to the login screen and switch roles.
+
+---
+
+## 🔗 Architecture & Backend Integration
+
+The frontend uses a strict 3-tier decoupling pattern:
+```
+React Native Components
+          ↓
+  Domain Services (authService, dashboardService)
+          ↓
+  Centralized ApiClient (apiClient.ts)
+          ↓
+  FastAPI Backend (Future integration)
+          ↓
+  PostgreSQL Database
+```
+
+To switch from mock mode to the real backend in Phase 2:
+1. Update `EXPO_PUBLIC_API_BASE_URL` in `.env`.
+2. Toggle `USE_MOCK_API = false` in [src/services/api/apiClient.ts](file:///d:/fundamics/fundamics_lms_frontend/src/services/api/apiClient.ts). Zero UI components require modification.
 
 ---
 
 ## 📄 License
 
-All rights reserved. © Fundamics
+All rights reserved. © Fundemics Tutorials LLP.

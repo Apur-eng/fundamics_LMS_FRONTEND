@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Fundamics LMS",
+    "slug": "fundamics-lms",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#0B192C",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B192C"
+      }
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
