@@ -1,16 +1,31 @@
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { User } from '../../types/auth';
 
 const STORAGE_KEYS = {
-  AUTH_TOKEN: '@fundamics:auth_token',
-  USER_SESSION: '@fundamics:user_session',
-  ACTIVE_ROLE: '@fundamics:active_role',
+  AUTH_TOKEN: 'fundamics_auth_token',
+  USER_SESSION: 'fundamics_user_session',
+  ACTIVE_ROLE: 'fundamics_active_role',
 } as const;
 
-// In-memory fallback for environments without persistent storage
+// In-memory fallback for environments without persistent storage or SSR
 const memoryStore = new Map<string, string>();
 
 class StorageService {
+  private isSecureStoreAvailable: boolean | null = null;
+
+  private async checkSecureStore(): Promise<boolean> {
+    if (this.isSecureStoreAvailable !== null) {
+      return this.isSecureStoreAvailable;
+    }
+    try {
+      this.isSecureStoreAvailable = await SecureStore.isAvailableAsync();
+    } catch {
+      this.isSecureStoreAvailable = false;
+    }
+    return this.isSecureStoreAvailable;
+  }
+
   private hasWebStorage(): boolean {
     return (
       Platform.OS === 'web' &&
@@ -19,36 +34,75 @@ class StorageService {
     );
   }
 
+  private sanitizeKey(key: string): string {
+    return key.replace(/[^a-zA-Z0-9._-]/g, '_');
+  }
+
   public async getItem(key: string): Promise<string | null> {
+    const safeKey = this.sanitizeKey(key);
+
+    try {
+      if (await this.checkSecureStore()) {
+        const val = await SecureStore.getItemAsync(safeKey);
+        if (val !== null) return val;
+      }
+    } catch {
+      // Fall through if secure store read fails
+    }
+
     try {
       if (this.hasWebStorage()) {
-        return window.localStorage.getItem(key);
+        const val = window.localStorage.getItem(safeKey) ?? window.localStorage.getItem(key);
+        if (val !== null) return val;
       }
-      return memoryStore.get(key) ?? null;
     } catch {
-      return memoryStore.get(key) ?? null;
+      // Fall through to memory
     }
+
+    return memoryStore.get(safeKey) ?? memoryStore.get(key) ?? null;
   }
 
   public async setItem(key: string, value: string): Promise<void> {
-    try {
-      if (this.hasWebStorage()) {
-        window.localStorage.setItem(key, value);
+    const safeKey = this.sanitizeKey(key);
+    memoryStore.set(safeKey, value);
+
+    if (this.hasWebStorage()) {
+      try {
+        window.localStorage.setItem(safeKey, value);
+      } catch {
+        // Fallback gracefully on storage quota error
       }
-      memoryStore.set(key, value);
+    }
+
+    try {
+      if (await this.checkSecureStore()) {
+        await SecureStore.setItemAsync(safeKey, value);
+      }
     } catch {
-      memoryStore.set(key, value);
+      // Continue without crashing if secure store write fails
     }
   }
 
   public async removeItem(key: string): Promise<void> {
-    try {
-      if (this.hasWebStorage()) {
+    const safeKey = this.sanitizeKey(key);
+    memoryStore.delete(safeKey);
+    memoryStore.delete(key);
+
+    if (this.hasWebStorage()) {
+      try {
+        window.localStorage.removeItem(safeKey);
         window.localStorage.removeItem(key);
+      } catch {
+        // Ignore web storage removal errors
       }
-      memoryStore.delete(key);
+    }
+
+    try {
+      if (await this.checkSecureStore()) {
+        await SecureStore.deleteItemAsync(safeKey);
+      }
     } catch {
-      memoryStore.delete(key);
+      // Ignore secure store removal errors
     }
   }
 
