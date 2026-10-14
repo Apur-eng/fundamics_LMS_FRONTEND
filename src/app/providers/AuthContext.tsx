@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole, LoginCredentials, AuthState } from '../../types/auth';
 import { authService } from '../../services/api/authService';
+import { apiClient } from '../../services/api/apiClient';
 import {
   MOCK_STUDENT_USER,
   MOCK_TEACHER_USER,
@@ -9,6 +10,7 @@ import {
 
 export interface AuthContextType extends AuthState {
   userRole: UserRole | null;
+  isHydrating: boolean;
   login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => void;
@@ -28,6 +30,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading: false,
     error: null,
   });
+  const [isHydrating, setIsHydrating] = useState<boolean>(true);
+
+  const logout = useCallback(async () => {
+    setAuthState((prev) => ({ ...prev, isLoading: true }));
+    try {
+      await authService.logout();
+    } finally {
+      setAuthState({
+        isAuthenticated: false,
+        user: null,
+        isLoading: false,
+        error: null,
+      });
+    }
+  }, []);
+
+  // Hydrate session from secure storage on startup
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateSession = async () => {
+      try {
+        const stored = await authService.getStoredSession();
+        if (isMounted && stored) {
+          setAuthState({
+            isAuthenticated: true,
+            user: stored.user,
+            isLoading: false,
+            error: null,
+          });
+        }
+      } catch {
+        // Fallback to unauthenticated if storage is corrupted
+      } finally {
+        if (isMounted) {
+          setIsHydrating(false);
+        }
+      }
+    };
+
+    hydrateSession();
+
+    // Register 401 interceptor
+    const unregister = apiClient.registerUnauthorizedHandler(() => {
+      logout();
+    });
+
+    return () => {
+      isMounted = false;
+      unregister();
+    };
+  }, [logout]);
 
   const userRole = authState.user ? authState.user.role : null;
 
@@ -47,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setAuthState((prev) => ({
           ...prev,
           isLoading: false,
-          error: response.error || 'Authentication failed',
+          error: response.error || 'Authentication failed. Please verify your credentials.',
         }));
         return false;
       }
@@ -58,20 +112,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: err.message || 'An unexpected error occurred during login',
       }));
       return false;
-    }
-  };
-
-  const logout = async () => {
-    setAuthState((prev) => ({ ...prev, isLoading: true }));
-    try {
-      await authService.logout();
-    } finally {
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        isLoading: false,
-        error: null,
-      });
     }
   };
 
@@ -100,6 +140,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       value={{
         ...authState,
         userRole,
+        isHydrating,
         login,
         logout,
         switchRole,

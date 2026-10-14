@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TeacherTabParamList } from './types';
 import { useTheme } from '../../theme';
@@ -13,6 +14,10 @@ const Tab = createBottomTabNavigator<TeacherTabParamList>();
 
 export const TeacherNavigator: React.FC = () => {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const tabPaddingBottom = Math.max(insets.bottom, 8);
+  const tabHeight = 54 + tabPaddingBottom;
 
   return (
     <Tab.Navigator
@@ -23,9 +28,13 @@ export const TeacherNavigator: React.FC = () => {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: tabHeight,
+          paddingBottom: tabPaddingBottom,
+          paddingTop: 6,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
         },
       }}
     >

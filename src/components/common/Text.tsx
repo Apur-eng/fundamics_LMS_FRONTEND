@@ -16,6 +16,8 @@ export type TextColor =
   | 'inverseMuted'
   | 'accent'
   | 'distinction'
+  | 'gold'
+  | 'emerald'
   | 'danger'
   | 'warning'
   | 'success'
@@ -53,8 +55,10 @@ export const Text: React.FC<TextProps> = ({
         return colors.textInverse;
       case 'inverseMuted':
         return colors.textInverseMuted;
+      case 'emerald':
       case 'accent':
         return colors.accent;
+      case 'gold':
       case 'distinction':
         return colors.distinction;
       case 'danger':

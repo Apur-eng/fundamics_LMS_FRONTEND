@@ -9,16 +9,26 @@ import { AuthStackParamList } from '../../../app/navigation/types';
 
 type SplashScreenNavProp = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
-export const SplashScreen: React.FC = () => {
+export interface SplashScreenProps {
+  standalone?: boolean;
+}
+
+export const SplashScreen: React.FC<SplashScreenProps> = ({ standalone = false }) => {
   const { colors, spacing, borderRadius } = useTheme();
-  const navigation = useNavigation<SplashScreenNavProp>();
+  let navigation: SplashScreenNavProp | null = null;
+  try {
+    navigation = useNavigation<SplashScreenNavProp>();
+  } catch {
+    navigation = null;
+  }
 
   useEffect(() => {
+    if (standalone || !navigation) return;
     const timer = setTimeout(() => {
-      navigation.replace('Login');
+      navigation?.replace?.('Login');
     }, 1800);
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, standalone]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.primaryDark }]}>

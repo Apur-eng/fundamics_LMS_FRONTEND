@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
@@ -20,6 +21,7 @@ import { AdminDashboardData } from '../../../types/dashboard';
 
 export const AdminDashboardScreen: React.FC = () => {
   const { colors, spacing, borderRadius } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,11 @@ export const AdminDashboardScreen: React.FC = () => {
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing.massive },
+        {
+          paddingTop: Math.max(insets.top, 16),
+          paddingHorizontal: spacing.screenPadding,
+          paddingBottom: spacing.massive,
+        },
       ]}
       refreshControl={
         <RefreshControl

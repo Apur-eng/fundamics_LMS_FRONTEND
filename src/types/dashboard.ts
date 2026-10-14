@@ -17,6 +17,43 @@ export interface RecentResultItem {
   date: string;
 }
 
+export interface DayAttendanceRecord {
+  date: string; // YYYY-MM-DD
+  dayNumber: number; // 1-31
+  dayOfWeek: number; // 0 (Sun) to 6 (Sat)
+  status: 'PRESENT' | 'ABSENT' | 'OFF';
+  remarks?: string;
+}
+
+export interface MonthlyAttendanceSummary {
+  monthName: string; // e.g. "September 2026"
+  monthKey: string; // "2026-09"
+  presentDays: number;
+  absentDays: number;
+  scheduledDays: number;
+  percentage: number;
+  records: DayAttendanceRecord[];
+}
+
+export interface PerformanceTrendPoint {
+  id: string;
+  label: string; // e.g. "T1", "T2"
+  testName: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  date: string;
+}
+
+export interface PerformanceMetrics {
+  averageScore: number;
+  deltaTrend: number; // e.g. +4.6
+  trendDirection: 'UP' | 'DOWN' | 'STABLE';
+  testsCompleted: number;
+  highestScore: number;
+  trendPoints: PerformanceTrendPoint[];
+}
+
 export interface NoticeItem {
   id: string;
   title: string;
@@ -40,6 +77,8 @@ export interface StudentDashboardData {
     totalDays: number;
     status: 'EXCELLENT' | 'GOOD' | 'WARNING';
   };
+  dayWiseAttendance?: MonthlyAttendanceSummary;
+  performanceMetrics?: PerformanceMetrics;
   upcomingClasses: UpcomingClassItem[];
   recentResults: RecentResultItem[];
   notices: NoticeItem[];

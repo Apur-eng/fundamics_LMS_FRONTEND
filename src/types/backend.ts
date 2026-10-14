@@ -1,0 +1,115 @@
+/**
+ * FASTAPI BACKEND RESPONSE SCHEMAS
+ * =========================================================================
+ * Authoritative TypeScript interfaces matching the Pydantic schemas in:
+ * - d:\fundamics_backend\src\schemas\auth.py
+ * - d:\fundamics_backend\src\schemas\student_attendance.py
+ * - d:\fundamics_backend\src\schemas\exam_result.py
+ * - d:\fundamics_backend\src\schemas\note_file.py
+ * =========================================================================
+ */
+
+// --- Authentication DTOs ---
+export interface BackendTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in_seconds: number;
+}
+
+export interface BackendUserProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: 'ADMIN' | 'TEACHER' | 'STUDENT';
+  status: 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED' | 'INACTIVE';
+  student_id: string | null;
+  teacher_id: string | null;
+  student_code: string | null;
+  teacher_code: string | null;
+}
+
+// --- Student Attendance DTOs ---
+export interface BackendStudentAttendanceSummary {
+  student_id: string;
+  student_code: string;
+  total_working_days: number;
+  present_days: number;
+  absent_days: number;
+  late_days: number;
+  excused_days: number;
+  attendance_percentage: number;
+}
+
+/**
+ * Required FastAPI endpoint payload:
+ * GET /api/v1/student/me/attendance/logs?month=YYYY-MM
+ */
+export interface BackendDailyAttendanceRecord {
+  date: string; // YYYY-MM-DD
+  status: 'PRESENT' | 'ABSENT' | 'OFF' | 'EXCUSED';
+  session_count?: number;
+  remarks?: string | null;
+}
+
+export interface BackendMonthlyAttendanceResponse {
+  month: string; // e.g. "2026-09"
+  total_scheduled_days: number;
+  present_days: number;
+  absent_days: number;
+  attendance_percentage: number;
+  daily_records: BackendDailyAttendanceRecord[];
+}
+
+// --- Exam Results DTOs ---
+export interface BackendSubjectResult {
+  id: string;
+  exam_id: string;
+  exam_name: string | null;
+  student_id: string;
+  subject_id: string;
+  subject_name: string | null;
+  marks_obtained: number;
+  max_marks: number;
+  percentage: number;
+  grade: string | null;
+  published_at: string | null;
+}
+
+export interface BackendStudentExamSummaryResponse {
+  exam_id: string;
+  exam_name: string;
+  exam_date: string;
+  total_marks_obtained: number;
+  total_max_marks: number;
+  overall_percentage: number;
+  results: BackendSubjectResult[];
+}
+
+// --- Note / Material DTOs ---
+export interface BackendNoteResponse {
+  id: string;
+  title: string;
+  description: string | null;
+  class_id: string;
+  batch_id: string | null;
+  subject_id: string;
+  subject_name: string | null;
+  file_id: string;
+  original_filename: string | null;
+  file_size_bytes: number | null;
+  status: string;
+  created_at: string;
+}
+
+// --- Backend Standard Error Envelope ---
+export interface BackendErrorEnvelope {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details: unknown | null;
+  };
+  request_id?: string;
+}

@@ -92,6 +92,19 @@ export const typography = {
     fontWeight: '600' as TextStyle['fontWeight'],
     letterSpacing: 0.1,
   },
+  metricHero: {
+    fontSize: 36,
+    lineHeight: 42,
+    fontWeight: '700' as TextStyle['fontWeight'],
+    letterSpacing: -0.5,
+  },
+  academicLabel: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '700' as TextStyle['fontWeight'],
+    letterSpacing: 1.2,
+    textTransform: 'uppercase' as TextStyle['textTransform'],
+  },
 } as const;
 
 export type Typography = typeof typography;

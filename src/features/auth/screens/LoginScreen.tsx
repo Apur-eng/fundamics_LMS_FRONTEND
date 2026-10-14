@@ -44,17 +44,45 @@ export const LoginScreen: React.FC = () => {
     setValidationError(null);
   };
 
+  const handleQuickFill = () => {
+    if (selectedRole === 'STUDENT') {
+      setIdentifier('rohan.sharma@example.com');
+      setPassword('SecurePassword123!');
+    } else if (selectedRole === 'TEACHER') {
+      setIdentifier('sunita.rao@fundamics.com');
+      setPassword('TeacherSecurePass123!');
+    } else {
+      setIdentifier('admin@fundamics.com');
+      setPassword('SecurePassword123!');
+    }
+    setValidationError(null);
+    clearError();
+  };
+
   const handleLogin = async () => {
     setValidationError(null);
     clearError();
 
-    // Default credentials for seamless Phase 1 evaluation
-    const idToUse = identifier.trim() || (selectedRole === 'STUDENT' ? 'FND-2025-1042' : '9876543210');
-    const pwdToUse = password.trim() || 'password123';
+    const trimmedId = identifier.trim();
+    const trimmedPwd = password.trim();
+
+    if (!trimmedId) {
+      setValidationError(
+        selectedRole === 'STUDENT'
+          ? 'Please enter your Admission Number or Mobile'
+          : 'Please enter your Mobile or Official Email'
+      );
+      return;
+    }
+
+    if (!trimmedPwd) {
+      setValidationError('Please enter your password');
+      return;
+    }
 
     await login({
-      identifier: idToUse,
-      password: pwdToUse,
+      identifier: trimmedId,
+      password: trimmedPwd,
       selectedRole,
     });
   };
@@ -143,11 +171,11 @@ export const LoginScreen: React.FC = () => {
         {/* Form Container */}
         <Card elevation="sm" padding="lg">
           <Input
-            label={selectedRole === 'STUDENT' ? 'Admission No / Mobile' : 'Mobile / Official Email'}
+            label={selectedRole === 'STUDENT' ? 'Student Email / Admission No' : 'Official Email / ID'}
             placeholder={
               selectedRole === 'STUDENT'
-                ? 'e.g. FND-2025-1042 or 9876543210'
-                : 'e.g. manish.verma@fundamics.in'
+                ? 'e.g. rohan.sharma@example.com or FND-2026-101'
+                : 'e.g. sunita.rao@fundamics.com'
             }
             value={identifier}
             onChangeText={(text) => {
@@ -156,7 +184,6 @@ export const LoginScreen: React.FC = () => {
             }}
             autoCapitalize="none"
             leftIcon={<Ionicons name="person-outline" size={18} color={colors.textSecondary} />}
-            helperText="Press Sign In with empty fields to auto-fill mock credentials"
           />
 
           <Input
@@ -171,13 +198,26 @@ export const LoginScreen: React.FC = () => {
             leftIcon={<Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />}
           />
 
-          <View style={styles.forgotRow}>
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              onPress={handleQuickFill}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Fill demo credentials"
+              style={styles.demoFillBtn}
+            >
+              <Ionicons name="flash-outline" size={14} color={colors.accent} style={{ marginRight: 4 }} />
+              <Text variant="caption" color="accent" weight="700">
+                Auto-Fill {selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()} Demo
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={() => navigation.navigate('ForgotPassword')}
               activeOpacity={0.7}
               accessibilityRole="button"
             >
-              <Text variant="bodySmall" color="accent" weight="600">
+              <Text variant="bodySmall" color="secondary" weight="600">
                 Forgot password?
               </Text>
             </TouchableOpacity>
@@ -251,11 +291,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 10,
   },
-  forgotRow: {
+  actionRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
-    marginTop: -8,
+    marginTop: -4,
+  },
+  demoFillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
   },
   errorContainer: {
     flexDirection: 'row',

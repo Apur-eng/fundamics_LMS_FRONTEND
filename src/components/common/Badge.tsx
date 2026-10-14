@@ -7,6 +7,8 @@ export type BadgeVariant =
   | 'primary'
   | 'accent'
   | 'distinction'
+  | 'gold'
+  | 'emerald'
   | 'success'
   | 'warning'
   | 'danger'
@@ -34,12 +36,14 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const { colors, spacing, borderRadius } = useTheme();
 
-  const getVariantStyles = (): { bg: string; textCol: 'primary' | 'accent' | 'distinction' | 'success' | 'warning' | 'danger' | 'info' | 'secondary' } => {
+  const getVariantStyles = (): { bg: string; textCol: 'primary' | 'accent' | 'distinction' | 'gold' | 'emerald' | 'success' | 'warning' | 'danger' | 'info' | 'secondary' } => {
     switch (variant) {
       case 'primary':
         return { bg: colors.primaryContainer, textCol: 'primary' };
+      case 'emerald':
       case 'accent':
         return { bg: colors.accentContainer, textCol: 'accent' };
+      case 'gold':
       case 'distinction':
         return { bg: colors.distinctionContainer, textCol: 'distinction' };
       case 'success':

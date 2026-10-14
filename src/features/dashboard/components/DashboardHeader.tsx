@@ -22,7 +22,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { user, logout, userRole } = useAuth();
 
   return (
-    <View style={[styles.container, { marginBottom: spacing.lg }]}>
+    <View style={[styles.container, { marginBottom: spacing.md }]}>
       <View style={styles.leftCol}>
         <View style={styles.nameRow}>
           <Text variant="h2" color="primary" weight="700">
@@ -36,30 +36,32 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           </Text>
         )}
 
-        <View style={[styles.badgeRow, { marginTop: spacing.xs + 2 }]}>
-          {badgeLabel && (
-            <Badge
-              label={badgeLabel}
-              variant={userRole === 'STUDENT' ? 'accent' : userRole === 'TEACHER' ? 'primary' : 'distinction'}
-              size="sm"
-            />
-          )}
-          {user?.branchName && (
-            <Text
-              variant="caption"
-              color="muted"
-              style={{ marginLeft: spacing.sm }}
-            >
-              {user.branchName}
-            </Text>
-          )}
-        </View>
+        {(badgeLabel || user?.branchName) && (
+          <View style={[styles.badgeRow, { marginTop: spacing.xs }]}>
+            {badgeLabel && (
+              <Badge
+                label={badgeLabel}
+                variant={userRole === 'STUDENT' ? 'accent' : userRole === 'TEACHER' ? 'primary' : 'distinction'}
+                size="sm"
+              />
+            )}
+            {user?.branchName && (
+              <Text
+                variant="caption"
+                color="muted"
+                style={{ marginLeft: badgeLabel ? spacing.sm : 0 }}
+              >
+                {user.branchName}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
 
       <View style={styles.rightCol}>
         <Avatar
           name={user?.name || 'User'}
-          size={46}
+          size={40}
           accent={userRole === 'STUDENT' ? 'accent' : 'primary'}
         />
         <TouchableOpacity
@@ -70,7 +72,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             {
               backgroundColor: colors.surfaceVariant,
               borderRadius: borderRadius.full,
-              marginTop: 4,
+              marginLeft: spacing.sm,
             },
           ]}
           accessibilityRole="button"
@@ -103,11 +105,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   rightCol: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   logoutBtn: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },

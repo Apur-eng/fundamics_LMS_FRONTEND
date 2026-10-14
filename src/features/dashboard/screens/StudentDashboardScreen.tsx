@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   ScrollView,
@@ -6,223 +6,170 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
-import { Card } from '../../../components/common/Card';
-import { Badge } from '../../../components/common/Badge';
-import { LoadingState } from '../../../components/feedback/LoadingState';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { DashboardHeader } from '../components/DashboardHeader';
-import { StatCard } from '../components/StatCard';
-import { UpcomingClassCard } from '../components/UpcomingClassCard';
-import { dashboardService } from '../../../services/api/dashboardService';
-import { StudentDashboardData } from '../../../types/dashboard';
+import { StudentAcademicHeader } from '../components/StudentAcademicHeader';
+import { AttendanceCalendarPreview } from '../components/AttendanceCalendarPreview';
+import { AcademicExaminationRecord } from '../components/AcademicExaminationRecord';
+import { TodayTimeline } from '../components/TodayTimeline';
+import { CompactNoticesRow } from '../components/CompactNoticesRow';
+import { DashboardSkeleton } from '../components/DashboardSkeleton';
+import { TestResultDetailSheet } from '../../results/components/TestResultDetailSheet';
+import { useStudentDashboard } from '../hooks/useStudentDashboard';
+import { RecentResultItem } from '../../../types/dashboard';
 
 export const StudentDashboardScreen: React.FC = () => {
-  const { colors, spacing, borderRadius } = useTheme();
+  const { colors, spacing } = useTheme();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
 
-  const [data, setData] = useState<StudentDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, refreshing, error, refetch, onRefresh } = useStudentDashboard();
 
-  const fetchDashboard = async () => {
-    try {
-      const res = await dashboardService.getStudentDashboard();
-      if (res.success && res.data) {
-        setData(res.data);
-        setError(null);
-      } else {
-        setError('Failed to load dashboard data');
-      }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  // Test inspection modal sheet state
+  const [selectedResult, setSelectedResult] = useState<RecentResultItem | null>(null);
+  const [detailVisible, setDetailVisible] = useState(false);
 
-  useEffect(() => {
-    fetchDashboard();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchDashboard();
-  };
-
-  if (loading) {
-    return <LoadingState message="Fetching student timetable and records..." fullScreen />;
-  }
-
-  if (error || !data) {
+  if (loading && !data) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
-        <ErrorState message={error || 'No student data found'} onRetry={fetchDashboard} />
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <DashboardSkeleton />
       </View>
     );
   }
 
-  const { academicProfile, attendance, upcomingClasses, recentResults, notices } = data;
+  if (error && !data) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
+        <ErrorState message={error} onRetry={refetch} />
+      </View>
+    );
+  }
+
+  if (!data) return null;
+
+  const {
+    academicProfile,
+    attendance,
+    dayWiseAttendance,
+    performanceMetrics,
+    upcomingClasses,
+    recentResults,
+    notices,
+  } = data;
+
+  const handleSelectResult = (item: RecentResultItem) => {
+    setSelectedResult(item);
+    setDetailVisible(true);
+  };
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={[
-        styles.scrollContent,
-        { paddingHorizontal: spacing.screenPadding, paddingBottom: spacing.massive },
-      ]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={colors.primary}
-          colors={[colors.primary]}
-        />
-      }
-    >
-      {/* Header */}
-      <DashboardHeader
-        greeting={data.greeting}
-        subtitle={`${academicProfile.classGrade} • ${academicProfile.board}`}
-        badgeLabel="Enrolled Scholar"
-      />
-
-      {/* Attendance & Performance Stats Row */}
-      <View style={[styles.statsRow, { marginBottom: spacing.lg }]}>
-        <StatCard
-          label="Attendance Rate"
-          value={`${attendance.percentage}%`}
-          subValue={`${attendance.presentDays}/${attendance.totalDays} sessions`}
-          iconName="calendar-outline"
-          variant="accent"
-        />
-        <View style={{ width: spacing.md }} />
-        <StatCard
-          label="Simulations Taken"
-          value={recentResults.length}
-          subValue="Last 30 days"
-          iconName="trophy-outline"
-          variant="distinction"
-        />
-      </View>
-
-      {/* Institutional Notices Banner */}
-      {notices && notices.length > 0 && (
-        <View style={{ marginBottom: spacing.lg }}>
-          <View style={styles.sectionHeader}>
-            <Text variant="h3" color="primary" weight="700">
-              Notice Board
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top, 14),
+            paddingHorizontal: spacing.screenPadding,
+            paddingBottom: spacing.massive,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        {/* Background Sync Error Banner (Non-destructive) */}
+        {error && (
+          <View
+            style={[
+              styles.syncErrorBanner,
+              {
+                backgroundColor: colors.dangerContainer,
+                borderColor: colors.danger,
+                borderRadius: 6,
+                padding: spacing.sm,
+                marginBottom: spacing.md,
+              },
+            ]}
+          >
+            <Ionicons name="cloud-offline-outline" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+            <Text variant="caption" color="danger" style={{ flex: 1 }}>
+              Sync error: {error}. Presenting offline cached academic records.
             </Text>
-            <Badge label="Official" variant="neutral" size="sm" />
-          </View>
-
-          {notices.map((notice) => (
-            <Card
-              key={notice.id}
-              elevation="sm"
-              padding="md"
-              style={[
-                styles.noticeCard,
-                notice.isUrgent && { borderLeftColor: colors.accent, borderLeftWidth: 4 },
-              ]}
-            >
-              <View style={styles.noticeHeader}>
-                <Badge
-                  label={notice.category}
-                  variant={notice.isUrgent ? 'accent' : 'neutral'}
-                  size="sm"
-                />
-                <Text variant="caption" color="muted">
-                  {notice.date}
-                </Text>
-              </View>
-              <Text variant="body" color="primary" weight="600" style={{ marginTop: 6 }}>
-                {notice.title}
+            <TouchableOpacity onPress={refetch} activeOpacity={0.7} style={{ marginLeft: 6 }}>
+              <Text variant="caption" color="danger" weight="700">
+                Retry
               </Text>
-            </Card>
-          ))}
-        </View>
-      )}
+            </TouchableOpacity>
+          </View>
+        )}
 
-      {/* Today's Classes Section */}
-      <View style={{ marginBottom: spacing.lg }}>
-        <View style={styles.sectionHeader}>
-          <Text variant="h3" color="primary" weight="700">
-            Classes Today
-          </Text>
-          <Text variant="caption" color="secondary">
-            {upcomingClasses.length} Scheduled
-          </Text>
-        </View>
+        {/* 1. COMPACT ACADEMIC GRADIENT HEADER */}
+        <StudentAcademicHeader
+          greeting={data.greeting}
+          studentName={academicProfile.studentName}
+          admissionNumber={academicProfile.admissionNumber}
+          classGrade={academicProfile.classGrade}
+          board={academicProfile.board}
+          branch={academicProfile.branch}
+        />
 
-        {upcomingClasses.map((cls) => (
-          <UpcomingClassCard key={cls.id} item={cls} />
-        ))}
-      </View>
+        {/* 2. ATTENDANCE HERO & DAY-WISE MONTHLY CALENDAR (Primary Pillar) */}
+        <AttendanceCalendarPreview
+          overallPercentage={attendance.percentage}
+          presentDays={attendance.presentDays}
+          totalDays={attendance.totalDays}
+          monthlyData={dayWiseAttendance}
+          onViewAll={() => navigation.navigate('StudentAttendance')}
+        />
 
-      {/* Recent Test Results Section */}
-      <View style={{ marginBottom: spacing.md }}>
-        <View style={styles.sectionHeader}>
-          <Text variant="h3" color="primary" weight="700">
-            Recent Assessment Scores
-          </Text>
-        </View>
+        {/* 3. EXAMINATION RECORD & HISTORICAL PERFORMANCE (Second Primary Pillar) */}
+        <AcademicExaminationRecord
+          metrics={performanceMetrics}
+          results={recentResults}
+          onSelectResult={handleSelectResult}
+          onViewAll={() => navigation.navigate('StudentResultsTab')}
+        />
 
-        {recentResults.map((res) => (
-          <Card key={res.id} elevation="sm" padding="md" style={styles.resultCard}>
-            <View style={styles.resultRow}>
-              <View style={{ flex: 1 }}>
-                <Text variant="body" color="primary" weight="600">
-                  {res.testName}
-                </Text>
-                <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
-                  {res.subject} • {res.date}
-                </Text>
-              </View>
+        {/* 4. TODAY'S SESSIONS (Secondary Content: Timetable Ledger) */}
+        <TodayTimeline
+          classes={upcomingClasses}
+          onClassPress={() => navigation.navigate('StudentClassesTab')}
+        />
 
-              <Badge
-                label={`${res.score}/${res.maxScore}`}
-                variant={res.score >= 90 ? 'distinction' : 'accent'}
-                size="md"
-              />
-            </View>
-          </Card>
-        ))}
-      </View>
-    </ScrollView>
+        {/* 5. OFFICIAL CIRCULARS & NOTICES (Secondary Content: Minimal Row) */}
+        <CompactNoticesRow
+          notices={notices}
+          onViewAll={() => navigation.navigate('StudentNotificationsTab')}
+          onNoticePress={() => navigation.navigate('StudentNotificationsTab')}
+        />
+      </ScrollView>
+
+      {/* Test Result Inspection Detail Sheet */}
+      <TestResultDetailSheet
+        visible={detailVisible}
+        onClose={() => setDetailVisible(false)}
+        result={selectedResult}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    paddingTop: 16,
-  },
-  statsRow: {
+  scrollContent: {},
+  syncErrorBanner: {
     flexDirection: 'row',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  noticeCard: {
-    marginBottom: 10,
-  },
-  noticeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  resultCard: {
-    marginBottom: 10,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderWidth: 1,
   },
 });

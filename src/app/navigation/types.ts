@@ -15,6 +15,11 @@ export type StudentTabParamList = {
   StudentNotificationsTab: undefined;
 };
 
+export type StudentStackParamList = {
+  StudentTabs: NavigatorScreenParams<StudentTabParamList> | undefined;
+  StudentAttendance: undefined;
+};
+
 export type TeacherTabParamList = {
   TeacherDashboardTab: undefined;
   TeacherAttendanceTab: undefined;
@@ -32,7 +37,7 @@ export type AdminTabParamList = {
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  StudentApp: NavigatorScreenParams<StudentTabParamList>;
+  StudentApp: NavigatorScreenParams<StudentStackParamList>;
   TeacherApp: NavigatorScreenParams<TeacherTabParamList>;
   AdminApp: NavigatorScreenParams<AdminTabParamList>;
 };

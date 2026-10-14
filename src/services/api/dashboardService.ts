@@ -2,7 +2,8 @@
  * DASHBOARD SERVICE ABSTRACTION
  * =========================================================================
  * Fetches role-specific dashboard metrics, schedules, and alerts.
- * Uses typed mock fixtures until FastAPI backend integration.
+ * Student dashboard routes directly to real FastAPI student endpoints
+ * via studentService.
  * =========================================================================
  */
 
@@ -13,26 +14,23 @@ import {
   TeacherDashboardData,
   AdminDashboardData,
 } from '../../types/dashboard';
+import { studentService } from './studentService';
 import {
-  MOCK_STUDENT_DASHBOARD,
   MOCK_TEACHER_DASHBOARD,
   MOCK_ADMIN_DASHBOARD,
 } from './mockData';
 
 export const dashboardService = {
   /**
-   * Retrieves student dashboard metrics and schedule.
+   * Retrieves student dashboard metrics and schedule from real backend endpoints.
    */
   async getStudentDashboard(): Promise<ApiResponse<StudentDashboardData>> {
-    if (USE_MOCK_API) {
-      await apiClient.simulateLatency(350);
-      return {
-        success: true,
-        data: MOCK_STUDENT_DASHBOARD,
-        timestamp: new Date().toISOString(),
-      };
-    }
-    return apiClient.get<StudentDashboardData>('/v1/dashboard/student');
+    const data = await studentService.getDashboardData();
+    return {
+      success: true,
+      data,
+      timestamp: new Date().toISOString(),
+    };
   },
 
   /**
@@ -47,7 +45,7 @@ export const dashboardService = {
         timestamp: new Date().toISOString(),
       };
     }
-    return apiClient.get<TeacherDashboardData>('/v1/dashboard/teacher');
+    return apiClient.get<TeacherDashboardData>('/teacher/me/attendance/summary');
   },
 
   /**
@@ -62,6 +60,6 @@ export const dashboardService = {
         timestamp: new Date().toISOString(),
       };
     }
-    return apiClient.get<AdminDashboardData>('/v1/dashboard/admin');
+    return apiClient.get<AdminDashboardData>('/admin/settings/institute');
   },
 };

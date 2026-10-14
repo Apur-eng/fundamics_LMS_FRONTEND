@@ -1,6 +1,9 @@
 /**
  * Fundemics Institutional Color Palette
  * Source of truth: PROJECT_STRUCTURE.md & Fundemics Brand System
+ *
+ * Light theme uses the Academic Blue palette (white + pale blue + institutional blue).
+ * Dark theme preserves the original navy/emerald glassmorphism palette.
  */
 
 export const brandPalette = {
@@ -13,6 +16,15 @@ export const brandPalette = {
   navy100: '#E8EDF5',
   navy50: '#F3F6FA',
 
+  // Academic Blue Family (Light theme primary brand)
+  academicBlue900: '#044269',
+  academicBlue800: '#075B86',   // Deep academic blue — headers, primary text, active elements
+  academicBlue700: '#087BAF',   // Vivid institutional blue — CTAs, links, icons
+  academicBlue600: '#1A94CC',   // Mid-tone for progress fills
+  academicBlue100: '#BEE3F4',   // Subtle border / divider
+  academicBlue50:  '#E8F6FC',   // Pale-blue — section backgrounds, chips
+  academicBlue25:  '#F5F9FC',   // Page background
+
   // Emerald - Academic Growth, Rigor, Verification
   emerald800: '#045A3F',
   emerald700: '#047857',
@@ -21,11 +33,24 @@ export const brandPalette = {
   emerald100: '#D1FAE5',
   emerald50: '#ECFDF5',
 
+  // Light theme semantic greens (attendance present)
+  green800: '#0F6B4A',
+  green700: '#15966A',   // Present day — success
+  green100: '#D4F0E4',
+  green50:  '#E7F7EF',
+
+  // Light theme semantic reds (attendance absent)
+  red700: '#B93040',
+  red600: '#D94F55',     // Absent day — danger
+  red100: '#F8D8DA',
+  red50:  '#FDECEE',
+
   // Amber / Gold - Academic Excellence, Ranker Badges, Honors
   gold800: '#92400E',
   gold700: '#B45309',
   gold600: '#D97706', // Distinction Badge
   gold500: '#F59E0B',
+  academicGold: '#C69A45', // Light theme academic gold
   gold100: '#FEF3C7',
   gold50: '#FFFBEB',
 
@@ -106,106 +131,153 @@ export interface ColorTheme {
   onInfo: string;
 
   overlay: string;
+
+  // Dedicated Academic Tokens
+  academicGold: string;
+  academicGoldContainer: string;
+  emerald: string;
+  emeraldContainer: string;
+  navyPrimary: string;
+  navyDeep: string;
+  navyElevated: string;
+  divider: string;
 }
 
 export const lightThemeColors: ColorTheme = {
-  primary: brandPalette.navy800,
-  primaryLight: brandPalette.navy700,
-  primaryDark: brandPalette.navy900,
-  primaryContainer: brandPalette.navy50,
+  // Academic Blue — institutional primary brand
+  primary: brandPalette.academicBlue800,       // #075B86 deep academic blue
+  primaryLight: brandPalette.academicBlue700,  // #087BAF vivid blue
+  primaryDark: brandPalette.academicBlue900,   // #044269 darkest
+  primaryContainer: brandPalette.academicBlue50, // #E8F6FC pale-blue panel
   onPrimary: brandPalette.white,
 
-  accent: brandPalette.emerald600,
-  accentLight: brandPalette.emerald500,
-  accentDark: brandPalette.emerald700,
-  accentContainer: brandPalette.emerald50,
+  // Vivid institutional blue — CTAs, links, active icons
+  accent: brandPalette.academicBlue700,        // #087BAF
+  accentLight: brandPalette.academicBlue600,   // #1A94CC
+  accentDark: brandPalette.academicBlue800,    // #075B86
+  accentContainer: brandPalette.academicBlue50, // #E8F6FC
   onAccent: brandPalette.white,
 
-  distinction: brandPalette.gold600,
-  distinctionContainer: brandPalette.gold50,
-  onDistinction: brandPalette.gold800,
+  // Academic gold — distinction badges, merit
+  distinction: brandPalette.academicGold,      // #C69A45
+  distinctionContainer: brandPalette.gold50,   // #FFFBEB
+  onDistinction: brandPalette.gold800,         // #92400E
 
-  background: brandPalette.slate50,
-  surface: brandPalette.white,
-  surfaceElevated: brandPalette.white,
-  surfaceVariant: brandPalette.slate100,
+  // Page & surface hierarchy
+  background: brandPalette.academicBlue25,     // #F5F9FC pale page background
+  surface: brandPalette.white,                 // #FFFFFF card surface
+  surfaceElevated: brandPalette.white,         // #FFFFFF elevated card
+  surfaceVariant: brandPalette.academicBlue50, // #E8F6FC section panels
 
-  border: brandPalette.slate200,
-  borderLight: brandPalette.slate100,
-  borderFocus: brandPalette.navy800,
+  // Structural borders — soft blue-grey
+  border: '#E4EBF0',
+  borderLight: '#EEF4F8',
+  borderFocus: brandPalette.academicBlue700,   // #087BAF
 
-  textPrimary: brandPalette.slate900,
-  textSecondary: brandPalette.slate600,
-  textMuted: brandPalette.slate400,
+  // Typography — deep blue-grey on white
+  textPrimary: '#172B3D',                      // deep academic blue-black
+  textSecondary: '#6B7D8D',                    // medium blue-grey
+  textMuted: '#A0B0BC',                        // light muted
   textInverse: brandPalette.white,
-  textInverseMuted: brandPalette.slate300,
+  textInverseMuted: brandPalette.academicBlue100,
 
-  success: brandPalette.emerald600,
-  successContainer: brandPalette.emerald50,
-  onSuccess: brandPalette.emerald800,
+  // Attendance present — restrained green
+  success: brandPalette.green700,              // #15966A
+  successContainer: brandPalette.green50,      // #E7F7EF
+  onSuccess: brandPalette.green800,            // #0F6B4A
 
-  warning: brandPalette.gold600,
-  warningContainer: brandPalette.gold50,
+  // Warning — academic gold
+  warning: brandPalette.academicGold,          // #C69A45
+  warningContainer: brandPalette.gold50,       // #FFFBEB
   onWarning: brandPalette.gold800,
 
-  danger: brandPalette.crimson600,
-  dangerContainer: brandPalette.crimson50,
-  onDanger: brandPalette.crimson700,
+  // Attendance absent — soft red
+  danger: brandPalette.red600,                 // #D94F55
+  dangerContainer: brandPalette.red50,         // #FDECEE
+  onDanger: brandPalette.red700,               // #B93040
 
-  info: brandPalette.blue600,
-  infoContainer: brandPalette.blue50,
-  onInfo: brandPalette.blue700,
+  // Info — uses the primary blue family
+  info: brandPalette.academicBlue700,          // #087BAF
+  infoContainer: brandPalette.academicBlue50,  // #E8F6FC
+  onInfo: brandPalette.academicBlue800,        // #075B86
 
-  overlay: 'rgba(11, 25, 44, 0.45)',
+  overlay: 'rgba(7, 91, 134, 0.15)',
+
+  // Dedicated Academic Tokens (light theme)
+  academicGold: brandPalette.academicGold,             // #C69A45
+  academicGoldContainer: 'rgba(198, 154, 69, 0.12)',
+  emerald: brandPalette.green700,                      // #15966A (used by Text color="emerald")
+  emeraldContainer: brandPalette.green50,              // #E7F7EF
+  navyPrimary: brandPalette.academicBlue700,           // #087BAF — used as primary nav/brand
+  navyDeep: brandPalette.academicBlue800,              // #075B86
+  navyElevated: brandPalette.academicBlue50,           // #E8F6FC
+  divider: '#E4EBF0',
 };
 
 export const darkThemeColors: ColorTheme = {
-  primary: brandPalette.navy600,
-  primaryLight: brandPalette.navy500,
-  primaryDark: brandPalette.navy900,
-  primaryContainer: brandPalette.navy800,
-  onPrimary: brandPalette.white,
+  // Primary Navy & Indigo institutional base
+  primary: '#38C995', // Emerald indicator for active elements
+  primaryLight: '#4FE0AC',
+  primaryDark: '#101D38',
+  primaryContainer: '#141F32',
+  onPrimary: '#0B1220',
 
-  accent: brandPalette.emerald500,
-  accentLight: brandPalette.emerald600,
-  accentDark: brandPalette.emerald700,
-  accentContainer: brandPalette.emerald800,
-  onAccent: brandPalette.white,
+  // Emerald accents - Academic rigor, growth, verified status
+  accent: '#38C995',
+  accentLight: '#4FE0AC',
+  accentDark: '#28A77B',
+  accentContainer: 'rgba(56, 201, 149, 0.14)',
+  onAccent: '#0B1220',
 
-  distinction: brandPalette.gold500,
-  distinctionContainer: brandPalette.gold800,
-  onDistinction: brandPalette.gold100,
+  // Academic Gold - Distinction, merit, honors
+  distinction: '#D6B46A',
+  distinctionContainer: 'rgba(214, 180, 106, 0.14)',
+  onDistinction: '#0B1220',
 
-  background: brandPalette.navy900,
-  surface: brandPalette.navy800,
-  surfaceElevated: brandPalette.navy700,
-  surfaceVariant: brandPalette.slate800,
+  // Canvas Hierarchy
+  background: '#0B1220', // Deep background
+  surface: '#101D38', // Primary navy surface
+  surfaceElevated: '#141F32', // Elevated surface
+  surfaceVariant: '#17243B', // Subtle tertiary elevated
 
-  border: brandPalette.navy600,
-  borderLight: brandPalette.navy700,
-  borderFocus: brandPalette.emerald500,
+  // Structural lines & dividers
+  border: '#29354A', // Divider
+  borderLight: 'rgba(41, 53, 74, 0.65)',
+  borderFocus: '#38C995',
 
-  textPrimary: brandPalette.slate50,
-  textSecondary: brandPalette.slate300,
-  textMuted: brandPalette.slate500,
-  textInverse: brandPalette.slate900,
-  textInverseMuted: brandPalette.slate700,
+  // Typography
+  textPrimary: '#F5F7FB', // Primary text
+  textSecondary: '#A6B2C7', // Secondary text
+  textMuted: '#6B7A94',
+  textInverse: '#0B1220',
+  textInverseMuted: '#A6B2C7',
 
-  success: brandPalette.emerald500,
-  successContainer: 'rgba(16, 185, 129, 0.15)',
-  onSuccess: brandPalette.emerald100,
+  // Semantics
+  success: '#38C995',
+  successContainer: 'rgba(56, 201, 149, 0.15)',
+  onSuccess: '#D1FAE5',
 
-  warning: brandPalette.gold500,
-  warningContainer: 'rgba(245, 158, 11, 0.15)',
-  onWarning: brandPalette.gold100,
+  warning: '#D6B46A',
+  warningContainer: 'rgba(214, 180, 106, 0.15)',
+  onWarning: '#FEF3C7',
 
-  danger: brandPalette.crimson600,
-  dangerContainer: 'rgba(220, 38, 38, 0.15)',
-  onDanger: brandPalette.crimson100,
+  danger: '#F07878', // Absent / Warning state
+  dangerContainer: 'rgba(240, 120, 120, 0.15)',
+  onDanger: '#FEE2E2',
 
-  info: brandPalette.blue600,
-  infoContainer: 'rgba(37, 99, 235, 0.15)',
-  onInfo: brandPalette.blue100,
+  info: '#4E88DE',
+  infoContainer: 'rgba(78, 136, 222, 0.15)',
+  onInfo: '#DBEAFE',
 
-  overlay: 'rgba(2, 6, 23, 0.7)',
+  overlay: 'rgba(11, 18, 32, 0.8)',
+
+  // Dedicated Academic Tokens
+  academicGold: '#D6B46A',
+  academicGoldContainer: 'rgba(214, 180, 106, 0.14)',
+  emerald: '#38C995',
+  emeraldContainer: 'rgba(56, 201, 149, 0.14)',
+  navyPrimary: '#101D38',
+  navyDeep: '#0B1220',
+  navyElevated: '#141F32',
+  divider: '#29354A',
 };

@@ -12,7 +12,53 @@ import {
   StudentDashboardData,
   TeacherDashboardData,
   AdminDashboardData,
+  MonthlyAttendanceSummary,
+  PerformanceMetrics,
 } from '../../types/dashboard';
+
+// --- DEVELOPMENT FIXTURE: SEPTEMBER 2026 DAY-WISE ATTENDANCE ---
+// Isolated fixture for visual validation while backend day-logs endpoint is developed.
+export const DEV_FIXTURE_SEPTEMBER_ATTENDANCE: MonthlyAttendanceSummary = {
+  monthName: 'September 2026',
+  monthKey: '2026-09',
+  presentDays: 24,
+  absentDays: 2,
+  scheduledDays: 26,
+  percentage: 92.3,
+  records: Array.from({ length: 30 }, (_, i) => {
+    const day = i + 1;
+    // 1 Sep 2026 was Tuesday (dayOfWeek = 2)
+    const dayOfWeek = (2 + i) % 7; // 0=Sun, 1=Mon, ..., 6=Sat
+    const date = `2026-09-${day < 10 ? '0' + day : day}`;
+
+    if (dayOfWeek === 0) {
+      return { date, dayNumber: day, dayOfWeek, status: 'OFF' as const, remarks: 'Sunday - Institute Closed' };
+    }
+    // Absent on day 16 and 25
+    if (day === 16) {
+      return { date, dayNumber: day, dayOfWeek, status: 'ABSENT' as const, remarks: 'Medical Leave' };
+    }
+    if (day === 25) {
+      return { date, dayNumber: day, dayOfWeek, status: 'ABSENT' as const, remarks: 'Family Emergency' };
+    }
+    return { date, dayNumber: day, dayOfWeek, status: 'PRESENT' as const };
+  }),
+};
+
+// --- DEVELOPMENT FIXTURE: TEST PERFORMANCE METRICS & TRENDS ---
+export const DEV_FIXTURE_PERFORMANCE_METRICS: PerformanceMetrics = {
+  averageScore: 91.8,
+  deltaTrend: 4.6,
+  trendDirection: 'UP',
+  testsCompleted: 4,
+  highestScore: 98,
+  trendPoints: [
+    { id: 'res-04', label: 'T1', testName: 'Weekly Test #6', score: 87, maxScore: 100, percentage: 87, date: '15 Sep' },
+    { id: 'res-03', label: 'T2', testName: 'Organic Reactions', score: 91, maxScore: 100, percentage: 91, date: '20 Sep' },
+    { id: 'res-02', label: 'T3', testName: 'Calculus Precision', score: 98, maxScore: 100, percentage: 98, date: '24 Sep' },
+    { id: 'res-01', label: 'T4', testName: 'Board Simulation #8', score: 96, maxScore: 100, percentage: 96, date: '28 Sep' },
+  ],
+};
 
 // --- MOCK USERS ---
 export const MOCK_STUDENT_USER: User = {
@@ -65,31 +111,33 @@ export const MOCK_STUDENT_DASHBOARD: StudentDashboardData = {
     totalDays: 86,
     status: 'EXCELLENT',
   },
+  dayWiseAttendance: DEV_FIXTURE_SEPTEMBER_ATTENDANCE,
+  performanceMetrics: DEV_FIXTURE_PERFORMANCE_METRICS,
   upcomingClasses: [
     {
       id: 'cls-01',
       subject: 'Physics',
       topic: 'Electromagnetic Induction & Alternating Current',
       teacherName: 'Manish K. Verma (IIT Dhanbad)',
-      time: '04:30 PM – 06:00 PM',
+      time: '10:30 AM – 12:00 PM',
       room: 'Hall A (Smart Room)',
       status: 'LIVE',
     },
     {
       id: 'cls-02',
       subject: 'Mathematics',
-      topic: 'Definite Integrals & Area under Curves',
+      topic: 'Definite Integrals & Calculus Precision',
       teacherName: 'Mayank Aggarwal',
-      time: '06:15 PM – 07:45 PM',
+      time: '12:00 PM – 01:30 PM',
       room: 'Room 102',
       status: 'UPCOMING',
     },
     {
       id: 'cls-03',
       subject: 'Chemistry',
-      topic: 'Coordination Compounds: Isomerism & Crystal Field Theory',
+      topic: 'Organic Reaction Mechanisms & Kinetics',
       teacherName: 'Dr. S. K. Gupta',
-      time: 'Tomorrow, 04:30 PM',
+      time: '02:00 PM – 03:30 PM',
       room: 'Chemistry Lab 2',
       status: 'UPCOMING',
     },
@@ -101,7 +149,7 @@ export const MOCK_STUDENT_DASHBOARD: StudentDashboardData = {
       subject: 'Physics',
       score: 96,
       maxScore: 100,
-      date: '2026-09-24',
+      date: '2026-09-28',
     },
     {
       id: 'res-02',
@@ -109,13 +157,21 @@ export const MOCK_STUDENT_DASHBOARD: StudentDashboardData = {
       subject: 'Mathematics',
       score: 98,
       maxScore: 100,
-      date: '2026-09-20',
+      date: '2026-09-24',
     },
     {
       id: 'res-03',
-      testName: 'Organic Reaction Mechanisms Unit Test',
+      testName: 'Organic Reactions Unit Test',
       subject: 'Chemistry',
       score: 91,
+      maxScore: 100,
+      date: '2026-09-20',
+    },
+    {
+      id: 'res-04',
+      testName: 'Weekly Test #6',
+      subject: 'Physics',
+      score: 87,
       maxScore: 100,
       date: '2026-09-15',
     },
@@ -123,17 +179,17 @@ export const MOCK_STUDENT_DASHBOARD: StudentDashboardData = {
   notices: [
     {
       id: 'not-01',
-      title: 'CMS Special Sunday Doubt Clearance Session announced for Physics',
-      category: 'Academic Batch',
-      date: '28 Sep 2026',
-      isUrgent: true,
-    },
-    {
-      id: 'not-02',
       title: 'Pre-Board Mock Series datesheet released for ISC Class XII',
       category: 'Exams',
       date: '26 Sep 2026',
       isUrgent: false,
+    },
+    {
+      id: 'not-02',
+      title: 'Sunday doubt clearance session announced for Physics',
+      category: 'Academic Batch',
+      date: '28 Sep 2026',
+      isUrgent: true,
     },
   ],
 };
