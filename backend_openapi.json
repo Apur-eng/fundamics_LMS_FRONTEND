@@ -3541,6 +3541,56 @@
         ]
       }
     },
+    "/api/v1/student/me/attendance/logs": {
+      "get": {
+        "tags": [
+          "Student \u2014 My Attendance"
+        ],
+        "summary": "Get My Attendance Logs",
+        "description": "Student-only: Query authenticated student's day-wise attendance log records for a calendar month.",
+        "operationId": "get_my_attendance_logs_api_v1_student_me_attendance_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Target month in YYYY-MM format",
+              "title": "Month"
+            },
+            "description": "Target month in YYYY-MM format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentMonthlyAttendanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/student/me/results": {
       "get": {
         "tags": [
@@ -6575,6 +6625,48 @@
         ],
         "title": "StudentAttendanceSummary"
       },
+      "StudentDailyAttendanceRecord": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "session_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Count",
+            "default": 1
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "date",
+          "status"
+        ],
+        "title": "StudentDailyAttendanceRecord"
+      },
       "StudentExamSummaryResponse": {
         "properties": {
           "exam_id": {
@@ -6623,6 +6715,48 @@
           "results"
         ],
         "title": "StudentExamSummaryResponse"
+      },
+      "StudentMonthlyAttendanceResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "total_scheduled_days": {
+            "type": "integer",
+            "title": "Total Scheduled Days"
+          },
+          "present_days": {
+            "type": "integer",
+            "title": "Present Days"
+          },
+          "absent_days": {
+            "type": "integer",
+            "title": "Absent Days"
+          },
+          "attendance_percentage": {
+            "type": "number",
+            "title": "Attendance Percentage"
+          },
+          "daily_records": {
+            "items": {
+              "$ref": "#/components/schemas/StudentDailyAttendanceRecord"
+            },
+            "type": "array",
+            "title": "Daily Records"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "month",
+          "total_scheduled_days",
+          "present_days",
+          "absent_days",
+          "attendance_percentage",
+          "daily_records"
+        ],
+        "title": "StudentMonthlyAttendanceResponse"
       },
       "StudentResponse": {
         "properties": {

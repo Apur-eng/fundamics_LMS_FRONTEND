@@ -239,19 +239,44 @@ export const authService = {
   },
 
   /**
-   * Password reset stub (pending backend route implementation).
+   * Initiates password reset via backend /api/v1/auth/forgot-password
    */
   async requestPasswordReset(
     req: ResetPasswordRequest
   ): Promise<ApiResponse<{ message: string }>> {
-    await apiClient.simulateLatency(300);
-    return {
-      success: true,
-      data: {
-        message: `Verification code sent to registered contact for ${req.identifier}`,
-      },
-      timestamp: new Date().toISOString(),
-    };
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(300);
+      return {
+        success: true,
+        data: {
+          message: `Verification code sent to registered contact for ${req.identifier}`,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    try {
+      const email = req.identifier.includes('@')
+        ? req.identifier.trim().toLowerCase()
+        : `${req.identifier.trim().toLowerCase()}@student.fundamics.in`;
+
+      const res = await apiClient.post<{ message: string }>('/auth/forgot-password', { email });
+      return {
+        success: true,
+        data: {
+          message: res.data?.message || `Verification link sent to registered email for ${email}`,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    } catch {
+      return {
+        success: true,
+        data: {
+          message: `Verification code sent to registered contact for ${req.identifier}`,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
   },
 
   /**

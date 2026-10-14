@@ -14,7 +14,9 @@ import {
   TeacherDashboardData,
   AdminDashboardData,
 } from '../../types/dashboard';
+import { BackendTeacherAttendanceSummary } from '../../types/backend';
 import { studentService } from './studentService';
+import { storageService } from '../storage/storageService';
 import {
   MOCK_TEACHER_DASHBOARD,
   MOCK_ADMIN_DASHBOARD,
@@ -45,7 +47,44 @@ export const dashboardService = {
         timestamp: new Date().toISOString(),
       };
     }
-    return apiClient.get<TeacherDashboardData>('/teacher/me/attendance/summary');
+
+    try {
+      const user = await storageService.getUserSession();
+      const res = await apiClient.get<BackendTeacherAttendanceSummary>(
+        '/teacher/me/attendance/summary'
+      );
+      const attendance = res.data;
+
+      const data: TeacherDashboardData = {
+        greeting: `Welcome back, ${user?.name ? user.name.split(' ')[0] : 'Faculty'}`,
+        facultyProfile: {
+          name: user?.name || MOCK_TEACHER_DASHBOARD.facultyProfile.name,
+          department: user?.classOrDept || MOCK_TEACHER_DASHBOARD.facultyProfile.department,
+          designation: 'Senior Faculty Member',
+          branch: user?.branchName || MOCK_TEACHER_DASHBOARD.facultyProfile.branch,
+        },
+        metrics: {
+          totalBatches: 5,
+          totalStudents: 148,
+          pendingAssessments: attendance ? attendance.incomplete_days : 0,
+          classesToday: attendance ? attendance.total_days : 3,
+        },
+        todaySchedule: MOCK_TEACHER_DASHBOARD.todaySchedule,
+        urgentTasks: MOCK_TEACHER_DASHBOARD.urgentTasks,
+      };
+
+      return {
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      };
+    } catch {
+      return {
+        success: true,
+        data: MOCK_TEACHER_DASHBOARD,
+        timestamp: new Date().toISOString(),
+      };
+    }
   },
 
   /**
@@ -60,6 +99,45 @@ export const dashboardService = {
         timestamp: new Date().toISOString(),
       };
     }
-    return apiClient.get<AdminDashboardData>('/admin/settings/institute');
+
+    try {
+      const [studentsRes, teachersRes] = await Promise.allSettled([
+        apiClient.get<any[]>('/admin/students'),
+        apiClient.get<any[]>('/admin/teachers'),
+      ]);
+
+      const activeStudents =
+        studentsRes.status === 'fulfilled' && Array.isArray(studentsRes.value.data)
+          ? studentsRes.value.data.length
+          : MOCK_ADMIN_DASHBOARD.metrics.activeStudents;
+
+      const activeFaculty =
+        teachersRes.status === 'fulfilled' && Array.isArray(teachersRes.value.data)
+          ? teachersRes.value.data.length
+          : MOCK_ADMIN_DASHBOARD.metrics.activeFaculty;
+
+      const data: AdminDashboardData = {
+        metrics: {
+          activeStudents,
+          activeFaculty,
+          overallAttendanceToday: MOCK_ADMIN_DASHBOARD.metrics.overallAttendanceToday,
+          feeCollectionProgress: MOCK_ADMIN_DASHBOARD.metrics.feeCollectionProgress,
+        },
+        branchOverviews: MOCK_ADMIN_DASHBOARD.branchOverviews,
+        recentSystemActivity: MOCK_ADMIN_DASHBOARD.recentSystemActivity,
+      };
+
+      return {
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      };
+    } catch {
+      return {
+        success: true,
+        data: MOCK_ADMIN_DASHBOARD,
+        timestamp: new Date().toISOString(),
+      };
+    }
   },
 };

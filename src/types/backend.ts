@@ -103,6 +103,34 @@ export interface BackendNoteResponse {
   created_at: string;
 }
 
+// --- Notice / Announcement DTOs ---
+export interface BackendNoticeResponse {
+  id: string;
+  title: string;
+  content: string;
+  target_audience: string;
+  class_id?: string | null;
+  batch_id?: string | null;
+  priority: 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW';
+  attachment_file_id?: string | null;
+  is_active: boolean;
+  published_at: string;
+  expires_at?: string | null;
+  created_by: string;
+}
+
+// --- Teacher Attendance DTOs ---
+export interface BackendTeacherAttendanceSummary {
+  teacher_id: string;
+  teacher_code: string;
+  total_days: number;
+  present_days: number;
+  absent_days: number;
+  half_days: number;
+  incomplete_days: number;
+  total_served_hours: number;
+}
+
 // --- Backend Standard Error Envelope ---
 export interface BackendErrorEnvelope {
   success: false;
@@ -113,3 +141,4 @@ export interface BackendErrorEnvelope {
   };
   request_id?: string;
 }
+

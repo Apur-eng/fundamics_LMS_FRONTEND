@@ -1,7 +1,7 @@
 import { apiClient, USE_MOCK_API } from './apiClient';
 import { ApiResponse } from '../../types/api';
 import { NotificationItem, NotificationCategory } from '../../types/notifications';
-import { BackendNoteResponse } from '../../types/backend';
+import { BackendNoteResponse, BackendNoticeResponse } from '../../types/backend';
 import { storageService } from '../storage/storageService';
 
 const MOCK_NOTIFICATIONS: NotificationItem[] = [
@@ -90,25 +90,46 @@ export const notificationsService = {
       const session = await storageService.getUserSession();
       let items = [...MOCK_NOTIFICATIONS];
 
-      // If authenticated as student, fetch actual published notes/notices from backend
-      if (session?.role === 'STUDENT' && apiClient.getToken()) {
-        const res = await apiClient.get<BackendNoteResponse[]>('/student/me/notes');
-        if (res.data && res.data.length > 0) {
-          const realItems: NotificationItem[] = res.data.map((note) => ({
-            id: note.id,
-            title: note.title,
-            content: note.description || 'Academic circular attachment.',
-            category: 'ACADEMIC',
-            date: new Date(note.created_at).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-            }),
-            isUrgent: false,
-            isRead: false,
-            signatory: note.subject_name || 'Academic Affairs',
-            attachmentName: note.original_filename || undefined,
-          }));
-          items = realItems;
+      // If authenticated, fetch authoritative notices targeted to user role
+      if (session && apiClient.getToken()) {
+        try {
+          const noticesRes = await apiClient.get<BackendNoticeResponse[]>('/notices');
+          if (noticesRes.data && noticesRes.data.length > 0) {
+            items = noticesRes.data.map((notice) => ({
+              id: notice.id,
+              title: notice.title,
+              content: notice.content,
+              category: 'ACADEMIC',
+              date: new Date(notice.published_at).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+              }),
+              isUrgent: notice.priority === 'URGENT' || notice.priority === 'HIGH',
+              isRead: false,
+              signatory: 'Academic Cell • Fundemics LMS',
+            }));
+          } else if (session.role === 'STUDENT') {
+            // Secondary fallback: check study materials & notes if no notices published
+            const notesRes = await apiClient.get<BackendNoteResponse[]>('/student/me/notes');
+            if (notesRes.data && notesRes.data.length > 0) {
+              items = notesRes.data.map((note) => ({
+                id: note.id,
+                title: note.title,
+                content: note.description || 'Academic circular attachment.',
+                category: 'ACADEMIC',
+                date: new Date(note.created_at).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                }),
+                isUrgent: false,
+                isRead: false,
+                signatory: note.subject_name || 'Academic Affairs',
+                attachmentName: note.original_filename || undefined,
+              }));
+            }
+          }
+        } catch {
+          // Fall back gracefully to institutional fixtures
         }
       }
 
