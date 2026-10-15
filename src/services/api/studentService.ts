@@ -15,6 +15,7 @@ import {
   BackendStudentAttendanceSummary,
   BackendStudentExamSummaryResponse,
   BackendNoteResponse,
+  BackendMonthlyAttendanceResponse,
 } from '../../types/backend';
 import {
   StudentDashboardData,
@@ -23,12 +24,14 @@ import {
   PerformanceMetrics,
   PerformanceTrendPoint,
   MonthlyAttendanceSummary,
+  DayAttendanceRecord,
+  AttendanceDisplayStatus,
+  UpcomingClassItem,
 } from '../../types/dashboard';
 import { storageService } from '../storage/storageService';
 import {
   MOCK_STUDENT_DASHBOARD,
   DEV_FIXTURE_SEPTEMBER_ATTENDANCE,
-  DEV_FIXTURE_PERFORMANCE_METRICS,
 } from './mockData';
 
 // --- DATA MAPPERS ---
@@ -56,7 +59,14 @@ export const computePerformanceMetrics = (
   results: BackendStudentExamSummaryResponse[]
 ): PerformanceMetrics => {
   if (!results || results.length === 0) {
-    return DEV_FIXTURE_PERFORMANCE_METRICS;
+    return {
+      averageScore: 0,
+      deltaTrend: 0,
+      trendDirection: 'STABLE',
+      testsCompleted: 0,
+      highestScore: 0,
+      trendPoints: [],
+    };
   }
 
   // Sort chronologically ascending
@@ -176,117 +186,166 @@ export const studentService = {
    * Aggregates real backend data for the Student Dashboard.
    * Concurrently queries attendance, exam results, and notes.
    */
+  /**
+   * Aggregates real backend data for the Student Dashboard.
+   * Concurrently queries attendance summary, monthly day-wise attendance, exam results, and notes.
+   */
   async getDashboardData(): Promise<StudentDashboardData> {
     if (USE_MOCK_API) {
       await apiClient.simulateLatency(350);
       return MOCK_STUDENT_DASHBOARD;
     }
 
-    try {
-      // Load current user profile from storage
-      const user = await storageService.getUserSession();
-      const studentName = user?.name || 'Scholar';
-      const studentCode = user?.admissionNo || 'FND-2026';
+    // Load current user profile from storage
+    const user = await storageService.getUserSession();
+    const studentName = user?.name || 'Scholar';
+    const studentCode = user?.admissionNo || 'FND-2026';
 
-      // Query real backend endpoints concurrently
-      const [attendanceResult, resultsResult, notesResult] = await Promise.allSettled([
-        this.getAttendanceSummary(),
-        this.getExamResults(),
-        this.getStudentNotes(),
-      ]);
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-      // Resolve attendance
-      const attendance =
-        attendanceResult.status === 'fulfilled'
-          ? mapBackendAttendance(attendanceResult.value)
-          : MOCK_STUDENT_DASHBOARD.attendance;
+    // Query real backend endpoints concurrently
+    const [attendanceResult, dailyAttendanceResult, resultsResult, notesResult] = await Promise.allSettled([
+      this.getAttendanceSummary(),
+      this.getDailyAttendance(currentMonthKey),
+      this.getExamResults(),
+      this.getStudentNotes(),
+    ]);
 
-      // Resolve recent results
-      const recentResults =
-        resultsResult.status === 'fulfilled'
-          ? mapBackendResults(resultsResult.value)
-          : MOCK_STUDENT_DASHBOARD.recentResults;
+    // Resolve attendance summary
+    const attendance =
+      attendanceResult.status === 'fulfilled'
+        ? mapBackendAttendance(attendanceResult.value)
+        : {
+            percentage: 0,
+            presentDays: 0,
+            totalDays: 0,
+            status: 'GOOD' as const,
+          };
 
-      // Resolve notices (uses real backend notes if available, otherwise mock notices)
-      let notices = MOCK_STUDENT_DASHBOARD.notices;
-      if (notesResult.status === 'fulfilled' && notesResult.value.length > 0) {
-        const mappedNotes = mapBackendNotesToNotices(notesResult.value);
-        notices = mappedNotes;
-      }
+    // Resolve day-wise attendance (derived directly from real backend logs)
+    const dayWiseAttendance =
+      dailyAttendanceResult.status === 'fulfilled'
+        ? dailyAttendanceResult.value
+        : undefined;
 
-      // Resolve performance metrics from exam results
-      const performanceMetrics =
-        resultsResult.status === 'fulfilled'
-          ? computePerformanceMetrics(resultsResult.value)
-          : MOCK_STUDENT_DASHBOARD.performanceMetrics;
+    // Resolve recent results
+    const recentResults =
+      resultsResult.status === 'fulfilled'
+        ? mapBackendResults(resultsResult.value)
+        : [];
 
-      // Today's classes: timetable scheduler endpoint is pending backend route
-      const upcomingClasses = MOCK_STUDENT_DASHBOARD.upcomingClasses;
-
-      const hour = new Date().getHours();
-      const greetingTime = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-
-      return {
-        greeting: `${greetingTime}, ${studentName.split(' ')[0]}`,
-        academicProfile: {
-          studentName,
-          admissionNumber: studentCode,
-          classGrade: user?.classOrDept || 'Enrolled Scholar',
-          board: 'Fundemics Academic Programme',
-          branch: user?.branchName || 'Triveni Nagar (Flagship Campus)',
-        },
-        attendance,
-        dayWiseAttendance: DEV_FIXTURE_SEPTEMBER_ATTENDANCE,
-        performanceMetrics,
-        upcomingClasses,
-        recentResults,
-        notices,
-      };
-    } catch {
-      // Fallback to cached/mock dashboard if network is completely down
-      return MOCK_STUDENT_DASHBOARD;
+    // Resolve notices
+    let notices: NoticeItem[] = [];
+    if (notesResult.status === 'fulfilled' && notesResult.value.length > 0) {
+      notices = mapBackendNotesToNotices(notesResult.value);
     }
+
+    // Resolve performance metrics from exam results
+    const performanceMetrics =
+      resultsResult.status === 'fulfilled' && resultsResult.value.length > 0
+        ? computePerformanceMetrics(resultsResult.value)
+        : {
+            averageScore: 0,
+            deltaTrend: 0,
+            trendDirection: 'STABLE' as const,
+            testsCompleted: 0,
+            highestScore: 0,
+            trendPoints: [],
+          };
+
+    // Today's classes: timetable scheduler endpoint is pending backend route
+    const upcomingClasses: UpcomingClassItem[] = [];
+
+    const hour = now.getHours();
+    const greetingTime = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+    return {
+      greeting: `${greetingTime}, ${studentName.split(' ')[0]}`,
+      academicProfile: {
+        studentName,
+        admissionNumber: studentCode,
+        classGrade: user?.classOrDept || 'Enrolled Scholar',
+        board: 'Fundemics Academic Programme',
+        branch: user?.branchName || 'Triveni Nagar (Flagship Campus)',
+      },
+      attendance,
+      dayWiseAttendance,
+      performanceMetrics,
+      upcomingClasses,
+      recentResults,
+      notices,
+    };
   },
 
   /**
    * Fetches day-wise attendance for a specified month.
-   * Connects to /api/v1/student/me/attendance/logs with graceful fallback.
+   * Connects to GET /api/v1/student/me/attendance/logs?month=YYYY-MM
    */
-  async getDailyAttendance(_month: string = '2026-09'): Promise<MonthlyAttendanceSummary> {
+  async getDailyAttendance(month?: string): Promise<MonthlyAttendanceSummary> {
+    const targetMonth = month || (() => {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    })();
+
     if (USE_MOCK_API) {
       await apiClient.simulateLatency(250);
       return DEV_FIXTURE_SEPTEMBER_ATTENDANCE;
     }
 
-    try {
-      const res = await apiClient.get<any>(
-        `/student/me/attendance/logs?month=${_month}`
-      );
-      if (res.data && res.data.daily_records) {
+    const res = await apiClient.get<BackendMonthlyAttendanceResponse>(
+      `/student/me/attendance/logs?month=${targetMonth}`
+    );
+
+    if (res.data) {
+      const [year, monthNum] = res.data.month.split('-').map(Number);
+      const dateObj = new Date(year, monthNum - 1, 1);
+      const monthName = !isNaN(dateObj.getTime())
+        ? dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        : res.data.month;
+
+      const records: DayAttendanceRecord[] = (res.data.daily_records || []).map((r) => {
+        const [y, m, d] = r.date.split('-').map(Number);
+        // Calculate weekday in local time without UTC date shift (0 = Sunday, 1 = Monday)
+        const dayOfWeek = new Date(y, m - 1, d).getDay();
+        const dayNumber = d;
+
+        let status: AttendanceDisplayStatus = 'OFF';
+        if (r.status === 'PRESENT') status = 'PRESENT';
+        else if (r.status === 'ABSENT') status = 'ABSENT';
+        else if (r.status === 'LATE') status = 'LATE';
+        else if (r.status === 'EXCUSED') status = 'EXCUSED';
+        else if (r.status === 'HOLIDAY') status = 'HOLIDAY';
+        else if (r.status === 'OFF') status = 'OFF';
+
         return {
-          monthName: res.data.month === '2026-09' ? 'September 2026' : res.data.month,
-          monthKey: res.data.month,
-          presentDays: res.data.present_days,
-          absentDays: res.data.absent_days,
-          scheduledDays: res.data.total_scheduled_days,
-          percentage: res.data.attendance_percentage,
-          records: res.data.daily_records.map((r: any) => {
-            const dayNumber = parseInt(r.date.split('-')[2], 10);
-            const dayOfWeek = new Date(r.date).getDay();
-            const status = r.status === 'EXCUSED' ? ('OFF' as const) : (r.status as 'PRESENT' | 'ABSENT' | 'OFF');
-            return {
-              date: r.date,
-              dayNumber,
-              dayOfWeek,
-              status,
-              remarks: r.remarks || undefined,
-            };
-          }),
+          date: r.date,
+          dayNumber,
+          dayOfWeek,
+          status,
+          remarks: r.remarks || undefined,
         };
-      }
-    } catch {
-      // Fallback for pending backend endpoint
+      });
+
+      return {
+        monthName,
+        monthKey: res.data.month,
+        presentDays: res.data.present_days,
+        absentDays: res.data.absent_days,
+        scheduledDays: res.data.total_scheduled_days,
+        percentage: res.data.attendance_percentage,
+        records,
+      };
     }
-    return DEV_FIXTURE_SEPTEMBER_ATTENDANCE;
+
+    return {
+      monthName: targetMonth,
+      monthKey: targetMonth,
+      presentDays: 0,
+      absentDays: 0,
+      scheduledDays: 0,
+      percentage: 0,
+      records: [],
+    };
   },
 };

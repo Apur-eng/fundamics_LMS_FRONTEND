@@ -3,8 +3,8 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
-  ForgotPassword: undefined;
-  OtpVerification: { identifier: string };
+  ForgotPassword: { email?: string } | undefined;
+  ResetPassword: { token?: string; email?: string } | undefined;
 };
 
 export type StudentTabParamList = {

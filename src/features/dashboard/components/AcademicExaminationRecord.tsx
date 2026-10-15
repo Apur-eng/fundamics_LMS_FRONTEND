@@ -189,7 +189,7 @@ export const AcademicExaminationRecord: React.FC<AcademicExaminationRecordProps>
         )}
 
         {/* 3. PERFORMANCE TREND — only when verified historical data */}
-        {metrics && (
+        {metrics && metrics.testsCompleted > 0 && (
           <View
             style={[
               styles.trendBlock,

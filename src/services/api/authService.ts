@@ -15,13 +15,14 @@ import { storageService } from '../storage/storageService';
 import {
   User,
   LoginCredentials,
-  ResetPasswordRequest,
-  VerifyOtpRequest,
+  ForgotPasswordRequest,
+  ResetPasswordSubmitRequest,
 } from '../../types/auth';
 import { ApiResponse } from '../../types/api';
 import {
   BackendTokenResponse,
   BackendUserProfileResponse,
+  BackendMessageResponse,
 } from '../../types/backend';
 import {
   MOCK_STUDENT_USER,
@@ -152,31 +153,14 @@ export const authService = {
         timestamp: new Date().toISOString(),
       };
     } catch (err: any) {
-      // If backend is completely offline and unreachable (status 0), fallback gracefully
+      // Security: Under NO circumstances should network failure or backend outage create a synthetic authenticated session
       if (err.statusCode === 0 || err.code === 'NETWORK_ERROR') {
-        let fallbackUser: User = MOCK_STUDENT_USER;
-        if (credentials.selectedRole === 'TEACHER') {
-          fallbackUser = MOCK_TEACHER_USER;
-        } else if (credentials.selectedRole === 'ADMIN') {
-          fallbackUser = MOCK_ADMIN_USER;
-        }
-
-        const mockToken = `mock-fnd-jwt-${credentials.selectedRole.toLowerCase()}-${Date.now()}`;
-        apiClient.setToken(mockToken);
-        await storageService.setAuthToken(mockToken);
-        await storageService.setUserSession(fallbackUser);
-
-        return {
-          success: true,
-          data: {
-            token: mockToken,
-            user: fallbackUser,
-          },
-          message: 'Backend offline: session authenticated via offline demo mode.',
-          timestamp: new Date().toISOString(),
-        };
+        throw new ApiError(
+          'Unable to reach authentication server. Please check your network connection and retry.',
+          0,
+          'NETWORK_ERROR'
+        );
       }
-
       throw err;
     }
   },
@@ -239,57 +223,66 @@ export const authService = {
   },
 
   /**
-   * Initiates password reset via backend /api/v1/auth/forgot-password
+   * Initiates password reset via backend POST /api/v1/auth/forgot-password.
+   * Backend dispatches a secure reset token via email/notification.
    */
   async requestPasswordReset(
-    req: ResetPasswordRequest
+    req: ForgotPasswordRequest
   ): Promise<ApiResponse<{ message: string }>> {
     if (USE_MOCK_API) {
       await apiClient.simulateLatency(300);
       return {
         success: true,
         data: {
-          message: `Verification code sent to registered contact for ${req.identifier}`,
+          message: `If your account is registered and active, password reset instructions have been dispatched to ${req.email}.`,
         },
         timestamp: new Date().toISOString(),
       };
     }
 
-    try {
-      const email = req.identifier.includes('@')
-        ? req.identifier.trim().toLowerCase()
-        : `${req.identifier.trim().toLowerCase()}@student.fundamics.in`;
+    const email = req.email.trim().toLowerCase();
+    const res = await apiClient.post<BackendMessageResponse>('/auth/forgot-password', { email });
 
-      const res = await apiClient.post<{ message: string }>('/auth/forgot-password', { email });
-      return {
-        success: true,
-        data: {
-          message: res.data?.message || `Verification link sent to registered email for ${email}`,
-        },
-        timestamp: new Date().toISOString(),
-      };
-    } catch {
-      return {
-        success: true,
-        data: {
-          message: `Verification code sent to registered contact for ${req.identifier}`,
-        },
-        timestamp: new Date().toISOString(),
-      };
-    }
-  },
-
-  /**
-   * OTP verification stub (pending backend route implementation).
-   */
-  async verifyOtp(
-    req: VerifyOtpRequest
-  ): Promise<ApiResponse<{ verified: boolean }>> {
-    await apiClient.simulateLatency(300);
     return {
       success: true,
       data: {
-        verified: req.otp.length === 6,
+        message:
+          res.data?.message ||
+          'If your account is registered and active, password reset instructions have been dispatched.',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Completes password reset using secure token via backend POST /api/v1/auth/reset-password.
+   * Requires token and new_password (min 8, max 128 chars).
+   */
+  async resetPassword(
+    req: ResetPasswordSubmitRequest
+  ): Promise<ApiResponse<{ message: string }>> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return {
+        success: true,
+        data: {
+          message: 'Password reset successful (Mock Mode). Please login with your new credentials.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const res = await apiClient.post<BackendMessageResponse>('/auth/reset-password', {
+      token: req.token.trim(),
+      new_password: req.newPassword,
+    });
+
+    return {
+      success: true,
+      data: {
+        message:
+          res.data?.message ||
+          'Password reset successful. Please login with your new credentials.',
       },
       timestamp: new Date().toISOString(),
     };

@@ -33,12 +33,28 @@ export const RootNavigator: React.FC = () => {
     },
   };
 
+  const linking = {
+    prefixes: [
+      'fundamics://',
+      'https://*.fundamics.in',
+      'http://localhost:8081',
+      'http://localhost:19006',
+    ],
+    config: {
+      screens: {
+        ResetPassword: 'reset-password',
+        ForgotPassword: 'forgot-password',
+        Login: 'login',
+      },
+    },
+  };
+
   if (isHydrating) {
     return <SplashScreen standalone />;
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer theme={navigationTheme} linking={linking}>
       {!isAuthenticated ? (
         <AuthNavigator />
       ) : userRole === 'TEACHER' ? (

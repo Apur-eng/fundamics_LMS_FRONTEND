@@ -26,11 +26,16 @@ export interface LoginCredentials {
   selectedRole: UserRole;
 }
 
-export interface ResetPasswordRequest {
-  identifier: string;
+export interface ForgotPasswordRequest {
+  email: string;
 }
 
-export interface VerifyOtpRequest {
-  identifier: string;
-  otp: string;
+/**
+ * Backward-compatible alias for ForgotPasswordRequest.
+ */
+export type ResetPasswordRequest = ForgotPasswordRequest;
+
+export interface ResetPasswordSubmitRequest {
+  token: string;
+  newPassword: string;
 }

@@ -33,8 +33,11 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
   const [monthlyData, setMonthlyData] = useState<MonthlyAttendanceSummary | null>(null);
   const [selectedDay, setSelectedDay] = useState<DayAttendanceRecord | null>(null);
 
-  // Month navigation: default to September 2026
-  const [activeMonthKey, setActiveMonthKey] = useState<string>('2026-09');
+  // Month navigation: default to current calendar month
+  const [activeMonthKey, setActiveMonthKey] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -47,9 +50,11 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
       setMonthlyData(dailyRes);
 
       // Default select the latest scheduled day
-      if (dailyRes && dailyRes.records.length > 0) {
-        const latestWorking = dailyRes.records.filter((r) => r.status !== 'OFF').pop();
+      if (dailyRes && dailyRes.records && dailyRes.records.length > 0) {
+        const latestWorking = dailyRes.records.filter((r) => r.status !== 'OFF' && r.status !== 'HOLIDAY').pop();
         setSelectedDay(latestWorking || dailyRes.records[0]);
+      } else {
+        setSelectedDay(null);
       }
     } catch (err: any) {
       setError(err?.message || 'Unable to load attendance records');
@@ -70,7 +75,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
 
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  if (loading && !monthlyData) {
+  if (loading && !monthlyData && !summary) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
         <LoadingState message="Loading attendance records..." />
@@ -78,25 +83,42 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
     );
   }
 
-  if (error && !monthlyData) {
+  if (error && !monthlyData && !summary) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}>
-        <ErrorState message={error} onRetry={fetchData} />
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: Math.max(insets.top, 16), paddingHorizontal: spacing.screenPadding }}>
+        {onBack && (
+          <TouchableOpacity
+            onPress={onBack}
+            activeOpacity={0.7}
+            style={[styles.backBtn, { backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.full, marginBottom: spacing.md }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+        )}
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <ErrorState message={error} onRetry={fetchData} />
+        </View>
       </View>
     );
   }
 
-  const overallPercentage = summary ? Math.round(summary.attendance_percentage * 10) / 10 : 94.2;
-  const presentCount = summary ? summary.present_days : 81;
-  const absentCount = summary ? summary.absent_days : 5;
-  const totalCount = summary ? summary.total_working_days : 86;
+  const hasSummary = summary !== null && summary !== undefined;
+  const hasSummaryData = hasSummary && summary.total_working_days > 0;
+  const overallPercentage = hasSummary ? Math.round(summary.attendance_percentage * 10) / 10 : null;
+  const presentCount = hasSummary ? summary.present_days : null;
+  const absentCount = hasSummary ? summary.absent_days : null;
+  const totalCount = hasSummary ? summary.total_working_days : null;
 
   // Calendar alignment for 7 columns (Mon-Sun):
-  // 1 Sep 2026 was Tuesday (Mon=0, Tue=1 -> leadOffset = 1)
+  // Derive month's first day of week directly from activeMonthKey ("YYYY-MM") using actual date arithmetic
+  const [activeYear, activeMonthNum] = activeMonthKey.split('-').map(Number);
+  const firstDayOfMonth = new Date(activeYear, activeMonthNum - 1, 1);
+  const firstDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const monSunOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // 0 (Mon) -> 6 (Sun)
+
   const records = monthlyData?.records || [];
-  const firstDay = records[0];
-  const startDayOfWeek = firstDay ? firstDay.dayOfWeek : 2; // 0=Sun, 1=Mon, 2=Tue
-  const monSunOffset = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1; // 0 (Mon) -> 6 (Sun)
 
   return (
     <ScrollView
@@ -141,6 +163,34 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         </View>
       </View>
 
+      {/* Background Sync Error Banner (Non-destructive) */}
+      {error && (monthlyData || summary) && (
+        <View
+          style={[
+            styles.syncErrorBanner,
+            {
+              backgroundColor: colors.dangerContainer,
+              borderColor: colors.danger,
+              borderRadius: borderRadius.md,
+              padding: spacing.sm,
+              marginBottom: spacing.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <Ionicons name="alert-circle-outline" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+          <Text variant="caption" color="danger" style={{ flex: 1 }}>
+            {error}
+          </Text>
+          <TouchableOpacity onPress={fetchData} activeOpacity={0.7}>
+            <Text variant="caption" color="danger" weight="700">
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Top Overall Summary Block */}
       <View
         style={[
@@ -160,21 +210,30 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         </Text>
         <View style={styles.kpiScoreRow}>
           <Text variant="hero" color="primary" weight="700" style={{ fontSize: 36, lineHeight: 42 }}>
-            {overallPercentage}%
+            {hasSummaryData ? `${overallPercentage}%` : '—'}
           </Text>
-          <Badge
-            label={overallPercentage >= 85 ? 'On Track' : 'Warning'}
-            variant={overallPercentage >= 85 ? 'accent' : 'danger'}
-            size="md"
-            style={{ marginLeft: 10 }}
-          />
+          {hasSummaryData ? (
+            <Badge
+              label={overallPercentage! >= 85 ? 'On Track' : 'Warning'}
+              variant={overallPercentage! >= 85 ? 'accent' : 'danger'}
+              size="md"
+              style={{ marginLeft: 10 }}
+            />
+          ) : (
+            <Badge
+              label="No Records"
+              variant="neutral"
+              size="md"
+              style={{ marginLeft: 10 }}
+            />
+          )}
         </View>
 
         {/* 3 Metrics Row */}
         <View style={[styles.triMetricsRow, { borderTopColor: colors.borderLight, marginTop: spacing.md, paddingTop: spacing.md }]}>
           <View style={styles.metricItem}>
-            <Text variant="h3" color="success" weight="700">
-              {presentCount}
+            <Text variant="h3" color={hasSummaryData ? 'success' : 'muted'} weight="700">
+              {hasSummaryData ? presentCount : '—'}
             </Text>
             <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
               Present
@@ -184,8 +243,8 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           <View style={[styles.metricSeparator, { backgroundColor: colors.borderLight }]} />
 
           <View style={styles.metricItem}>
-            <Text variant="h3" color="danger" weight="700">
-              {absentCount}
+            <Text variant="h3" color={hasSummaryData ? 'danger' : 'muted'} weight="700">
+              {hasSummaryData ? absentCount : '—'}
             </Text>
             <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
               Absent
@@ -195,8 +254,8 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           <View style={[styles.metricSeparator, { backgroundColor: colors.borderLight }]} />
 
           <View style={styles.metricItem}>
-            <Text variant="h3" color="primary" weight="700">
-              {totalCount}
+            <Text variant="h3" color={hasSummaryData ? 'primary' : 'muted'} weight="700">
+              {hasSummaryData ? totalCount : '—'}
             </Text>
             <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
               Scheduled
@@ -221,7 +280,11 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         ]}
       >
         <TouchableOpacity
-          onPress={() => setActiveMonthKey('2026-08')}
+          onPress={() => {
+            const [y, m] = activeMonthKey.split('-').map(Number);
+            const prev = new Date(y, m - 2, 1);
+            setActiveMonthKey(`${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`);
+          }}
           style={styles.monthNavBtn}
           accessibilityRole="button"
           accessibilityLabel="Previous month"
@@ -230,11 +293,15 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         </TouchableOpacity>
 
         <Text variant="body" color="primary" weight="700">
-          {monthlyData?.monthName || 'September 2026'}
+          {monthlyData?.monthName || activeMonthKey}
         </Text>
 
         <TouchableOpacity
-          onPress={() => setActiveMonthKey('2026-10')}
+          onPress={() => {
+            const [y, m] = activeMonthKey.split('-').map(Number);
+            const next = new Date(y, m, 1);
+            setActiveMonthKey(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`);
+          }}
           style={styles.monthNavBtn}
           accessibilityRole="button"
           accessibilityLabel="Next month"
@@ -269,21 +336,25 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         </View>
 
         {/* Calendar Cells */}
-        <View style={[styles.calendarMatrix, { marginTop: spacing.sm }]}>
-          {/* Leading empty spacers */}
-          {Array.from({ length: monSunOffset }).map((_, idx) => (
-            <View key={`empty-${idx}`} style={styles.cellCol}>
-              <Text variant="caption" color="muted" style={{ opacity: 0.2 }}>
-                —
-              </Text>
-            </View>
-          ))}
+        {records.length > 0 ? (
+          <View style={[styles.calendarMatrix, { marginTop: spacing.sm }]}>
+            {/* Leading empty spacers */}
+            {Array.from({ length: monSunOffset }).map((_, idx) => (
+              <View key={`empty-${idx}`} style={styles.cellCol}>
+                <Text variant="caption" color="muted" style={{ opacity: 0.2 }}>
+                  —
+                </Text>
+              </View>
+            ))}
 
-          {/* Days */}
-          {records.map((item) => {
+            {/* Days */}
+            {records.map((item) => {
             const isSelected = selectedDay?.date === item.date;
             const isPresent = item.status === 'PRESENT';
             const isAbsent = item.status === 'ABSENT';
+            const isLate = item.status === 'LATE';
+            const isExcused = item.status === 'EXCUSED';
+            const isHolidayOrOff = item.status === 'HOLIDAY' || item.status === 'OFF';
 
             return (
               <TouchableOpacity
@@ -305,12 +376,16 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
                     styles.cellBadge,
                     isPresent && { backgroundColor: colors.successContainer },
                     isAbsent && { backgroundColor: colors.dangerContainer },
-                    item.status === 'OFF' && { backgroundColor: colors.surfaceVariant },
+                    isLate && { backgroundColor: '#FFFBEB' },
+                    isExcused && { backgroundColor: '#F0F4FA' },
+                    isHolidayOrOff && { backgroundColor: colors.surfaceVariant },
                   ]}
                 >
                   {isPresent && <Ionicons name="checkmark" size={12} color={colors.success} />}
                   {isAbsent && <Ionicons name="close" size={12} color={colors.danger} />}
-                  {item.status === 'OFF' && <Text variant="caption" color="muted">—</Text>}
+                  {isLate && <Ionicons name="time-outline" size={12} color="#926300" />}
+                  {isExcused && <Ionicons name="document-text-outline" size={12} color="#1B4D89" />}
+                  {isHolidayOrOff && <Text variant="caption" color="muted">—</Text>}
                 </View>
                 <Text
                   variant="caption"
@@ -323,7 +398,18 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
               </TouchableOpacity>
             );
           })}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.emptyCalendarContainer}>
+            <Ionicons name="calendar-outline" size={32} color={colors.textMuted} style={{ marginBottom: 6 }} />
+            <Text variant="bodySmall" color="secondary" align="center" weight="600">
+              No Attendance Logs Recorded
+            </Text>
+            <Text variant="caption" color="muted" align="center" style={{ marginTop: 2 }}>
+              Daily register logs have not been published for this month.
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Selected Day Inspector Card */}
@@ -347,7 +433,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
                 SELECTED DATE INSPECTION
               </Text>
               <Text variant="h3" color="primary" weight="700" style={{ marginTop: 2 }}>
-                {selectedDay.dayNumber} {monthlyData?.monthName || 'September 2026'}
+                {selectedDay.dayNumber} {monthlyData?.monthName || activeMonthKey}
               </Text>
             </View>
 
@@ -357,6 +443,12 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
                   ? 'Present'
                   : selectedDay.status === 'ABSENT'
                   ? 'Absent'
+                  : selectedDay.status === 'LATE'
+                  ? 'Late'
+                  : selectedDay.status === 'EXCUSED'
+                  ? 'Excused Leave'
+                  : selectedDay.status === 'HOLIDAY'
+                  ? 'Official Holiday'
                   : 'Institute Closed'
               }
               variant={
@@ -364,6 +456,10 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
                   ? 'success'
                   : selectedDay.status === 'ABSENT'
                   ? 'danger'
+                  : selectedDay.status === 'LATE'
+                  ? 'warning'
+                  : selectedDay.status === 'EXCUSED'
+                  ? 'primary'
                   : 'neutral'
               }
               size="md"
@@ -495,5 +591,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  syncErrorBanner: {
+    borderWidth: 1,
+  },
+  emptyCalendarContainer: {
+    paddingVertical: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

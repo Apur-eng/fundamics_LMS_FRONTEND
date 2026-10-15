@@ -23,15 +23,28 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
   const { colors, spacing, borderRadius, shadows } = useTheme();
 
   const absentDays = Math.max(0, totalDays - presentDays);
-  const isCompliant = overallPercentage >= 75;
-  const isExemplary = overallPercentage >= 90;
+  const hasAttendanceData = totalDays > 0;
+  const isCompliant = hasAttendanceData && overallPercentage >= 75;
+  const isExemplary = hasAttendanceData && overallPercentage >= 90;
 
   const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   const records = monthlyData?.records || [];
 
-  const firstDay = records[0];
-  const startDayOfWeek = firstDay ? firstDay.dayOfWeek : 2;
-  const leadEmptySlots = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+  // Derive month's first day of week directly from monthlyData.monthKey ("YYYY-MM") or current date
+  const leadEmptySlots = (() => {
+    if (monthlyData?.monthKey) {
+      const [y, m] = monthlyData.monthKey.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m)) {
+        const firstDayOfMonth = new Date(y, m - 1, 1);
+        const sunDay = firstDayOfMonth.getDay();
+        return sunDay === 0 ? 6 : sunDay - 1;
+      }
+    }
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const sunDay = firstDayOfMonth.getDay();
+    return sunDay === 0 ? 6 : sunDay - 1;
+  })();
 
   const progressPct = Math.max(0, Math.min(100, overallPercentage));
 
@@ -114,19 +127,23 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
               weight="700"
               style={styles.percentageNum}
             >
-              {overallPercentage}%
+              {hasAttendanceData ? `${overallPercentage}%` : '—'}
             </Text>
             {/* Status badge */}
             <View
               style={[
                 styles.statusBadge,
                 {
-                  backgroundColor: isExemplary
+                  backgroundColor: !hasAttendanceData
+                    ? colors.surfaceVariant
+                    : isExemplary
                     ? '#E7F7EF'
                     : isCompliant
                     ? '#FFFBEB'
                     : '#FDECEE',
-                  borderColor: isExemplary
+                  borderColor: !hasAttendanceData
+                    ? colors.border
+                    : isExemplary
                     ? '#A8DFC8'
                     : isCompliant
                     ? '#E9D89A'
@@ -138,7 +155,9 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
                 style={[
                   styles.statusDot,
                   {
-                    backgroundColor: isExemplary
+                    backgroundColor: !hasAttendanceData
+                      ? colors.textMuted
+                      : isExemplary
                       ? '#15966A'
                       : isCompliant
                       ? '#C69A45'
@@ -148,10 +167,10 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
               />
               <Text
                 style={styles.statusText}
-                color={isExemplary ? 'emerald' : isCompliant ? 'distinction' : 'danger'}
+                color={!hasAttendanceData ? 'muted' : isExemplary ? 'emerald' : isCompliant ? 'distinction' : 'danger'}
                 weight="700"
               >
-                {isExemplary ? 'EXEMPLARY' : isCompliant ? 'CRITERIA MET' : 'CRITICAL'}
+                {!hasAttendanceData ? 'NO RECORDS' : isExemplary ? 'EXEMPLARY' : isCompliant ? 'CRITERIA MET' : 'CRITICAL'}
               </Text>
             </View>
           </View>
@@ -239,7 +258,7 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
         <View style={styles.calendarHeaderRow}>
           <View style={styles.monthTitleWrap}>
             <Text variant="academicLabel" color="primary" style={styles.monthTitle}>
-              {monthlyData?.monthName?.toUpperCase() || 'SEPTEMBER 2026'}
+              {monthlyData?.monthName?.toUpperCase() || 'CURRENT MONTH'}
             </Text>
           </View>
           {monthlyData && (
@@ -253,7 +272,7 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
               </Text>
               <Text variant="caption" color="muted" style={{ marginHorizontal: 4 }}>·</Text>
               <Text variant="caption" color="muted" weight="600">
-                {records.filter((r) => r.status === 'OFF').length} Off
+                {records.filter((r) => r.status === 'OFF' || r.status === 'HOLIDAY').length} Off
               </Text>
             </View>
           )}
@@ -288,7 +307,9 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
             {records.map((rec) => {
               const isPresent = rec.status === 'PRESENT';
               const isAbsent = rec.status === 'ABSENT';
-              const isOff = rec.status === 'OFF';
+              const isLate = rec.status === 'LATE';
+              const isExcused = rec.status === 'EXCUSED';
+              const isOff = rec.status === 'HOLIDAY' || rec.status === 'OFF';
 
               return (
                 <View key={rec.date} style={styles.dayCell}>
@@ -302,6 +323,14 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
                       isAbsent && {
                         backgroundColor: absentBg,
                         borderColor: absentBorder,
+                      },
+                      isLate && {
+                        backgroundColor: '#FFFBEB',
+                        borderColor: '#E9D89A',
+                      },
+                      isExcused && {
+                        backgroundColor: '#F0F4FA',
+                        borderColor: '#C8D6EC',
                       },
                       isOff && {
                         backgroundColor: colors.surfaceVariant,
@@ -317,8 +346,12 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
                             ? absentText
                             : isPresent
                             ? presentText
+                            : isLate
+                            ? '#926300'
+                            : isExcused
+                            ? '#1B4D89'
                             : colors.textMuted,
-                          fontWeight: isAbsent || isPresent ? '700' : '400',
+                          fontWeight: isAbsent || isPresent ? '700' : '500',
                         },
                       ]}
                     >
@@ -330,6 +363,12 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
                       )}
                       {isAbsent && (
                         <Ionicons name="close" size={8} color={absentText} />
+                      )}
+                      {isLate && (
+                        <Ionicons name="time-outline" size={8} color="#926300" />
+                      )}
+                      {isExcused && (
+                        <Ionicons name="document-text-outline" size={8} color="#1B4D89" />
                       )}
                       {isOff && (
                         <View style={[styles.offDash, { backgroundColor: colors.textMuted }]} />
@@ -343,7 +382,7 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
         ) : (
           <View style={styles.emptyCalendar}>
             <Text variant="caption" color="muted" align="center">
-              Loading attendance data…
+              No attendance records logged for this month
             </Text>
           </View>
         )}

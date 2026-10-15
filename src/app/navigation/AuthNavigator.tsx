@@ -5,7 +5,7 @@ import {
   SplashScreen,
   LoginScreen,
   ForgotPasswordScreen,
-  OtpVerificationScreen,
+  ResetPasswordScreen,
 } from '../../features/auth';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -27,8 +27,8 @@ export const AuthNavigator: React.FC = () => {
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
-        name="OtpVerification"
-        component={OtpVerificationScreen}
+        name="ResetPassword"
+        component={ResetPasswordScreen}
         options={{ animation: 'slide_from_right' }}
       />
     </Stack.Navigator>

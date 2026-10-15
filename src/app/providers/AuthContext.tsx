@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole, LoginCredentials, AuthState } from '../../types/auth';
 import { authService } from '../../services/api/authService';
-import { apiClient } from '../../services/api/apiClient';
+import { apiClient, USE_MOCK_API } from '../../services/api/apiClient';
 import {
   MOCK_STUDENT_USER,
   MOCK_TEACHER_USER,
@@ -116,6 +116,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const switchRole = (newRole: UserRole) => {
+    // Security: Role switching cannot grant authenticated status or change permissions outside explicit mock mode
+    if (!USE_MOCK_API) {
+      console.warn('[Security] Role switching is prohibited outside explicit mock mode.');
+      return;
+    }
+
     let mockUser: User = MOCK_STUDENT_USER;
     if (newRole === 'TEACHER') {
       mockUser = MOCK_TEACHER_USER;

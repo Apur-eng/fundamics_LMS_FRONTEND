@@ -17,6 +17,21 @@ export interface BackendTokenResponse {
   expires_in_seconds: number;
 }
 
+// --- Password Recovery DTOs ---
+export interface BackendForgotPasswordRequest {
+  email: string;
+}
+
+export interface BackendResetPasswordRequest {
+  token: string;
+  new_password: string;
+}
+
+export interface BackendMessageResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface BackendUserProfileResponse {
   id: string;
   name: string;
@@ -46,9 +61,16 @@ export interface BackendStudentAttendanceSummary {
  * Required FastAPI endpoint payload:
  * GET /api/v1/student/me/attendance/logs?month=YYYY-MM
  */
+export type BackendAttendanceStatus =
+  | 'PRESENT'
+  | 'ABSENT'
+  | 'LATE'
+  | 'EXCUSED'
+  | 'HOLIDAY';
+
 export interface BackendDailyAttendanceRecord {
   date: string; // YYYY-MM-DD
-  status: 'PRESENT' | 'ABSENT' | 'OFF' | 'EXCUSED';
+  status: BackendAttendanceStatus | string;
   session_count?: number;
   remarks?: string | null;
 }

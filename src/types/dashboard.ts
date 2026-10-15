@@ -17,11 +17,19 @@ export interface RecentResultItem {
   date: string;
 }
 
+export type AttendanceDisplayStatus =
+  | 'PRESENT'
+  | 'ABSENT'
+  | 'LATE'
+  | 'EXCUSED'
+  | 'HOLIDAY'
+  | 'OFF';
+
 export interface DayAttendanceRecord {
   date: string; // YYYY-MM-DD
   dayNumber: number; // 1-31
   dayOfWeek: number; // 0 (Sun) to 6 (Sat)
-  status: 'PRESENT' | 'ABSENT' | 'OFF';
+  status: AttendanceDisplayStatus;
   remarks?: string;
 }
 

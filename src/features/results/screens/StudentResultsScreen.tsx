@@ -15,8 +15,8 @@ import { studentService, computePerformanceMetrics, mapBackendResults } from '..
 import { RecentResultItem, PerformanceMetrics } from '../../../types/dashboard';
 import { LoadingState } from '../../../components/feedback/LoadingState';
 import { ErrorState } from '../../../components/feedback/ErrorState';
+import { EmptyState } from '../../../components/feedback/EmptyState';
 import { TestResultDetailSheet } from '../components/TestResultDetailSheet';
-import { DEV_FIXTURE_PERFORMANCE_METRICS, MOCK_STUDENT_DASHBOARD } from '../../../services/api/mockData';
 
 export interface StudentResultsScreenProps {
   onBack?: () => void;
@@ -31,7 +31,7 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
   const [error, setError] = useState<string | null>(null);
 
   const [results, setResults] = useState<RecentResultItem[]>([]);
-  const [metrics, setMetrics] = useState<PerformanceMetrics>(DEV_FIXTURE_PERFORMANCE_METRICS);
+  const [metrics, setMetrics] = useState<PerformanceMetrics>(() => computePerformanceMetrics([]));
   const [selectedResult, setSelectedResult] = useState<RecentResultItem | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
 
@@ -44,13 +44,11 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
         setResults(mapped);
         setMetrics(computePerformanceMetrics(rawResults));
       } else {
-        setResults(MOCK_STUDENT_DASHBOARD.recentResults);
-        setMetrics(DEV_FIXTURE_PERFORMANCE_METRICS);
+        setResults([]);
+        setMetrics(computePerformanceMetrics([]));
       }
     } catch (err: any) {
       setError(err?.message || 'Unable to load examination results');
-      setResults(MOCK_STUDENT_DASHBOARD.recentResults);
-      setMetrics(DEV_FIXTURE_PERFORMANCE_METRICS);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -133,79 +131,38 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
         </View>
       </View>
 
-      {/* Top Academic Performance Summary Card */}
-      <View
-        style={[
-          styles.kpiCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderRadius: borderRadius.lg,
-            padding: spacing.cardPadding,
-            marginBottom: spacing.lg,
-            ...shadows.sm,
-          },
-        ]}
-      >
-        <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8 }}>
-          YOUR OVERALL PERFORMANCE
-        </Text>
-
-        <View style={styles.kpiScoreRow}>
-          <Text variant="hero" color="primary" weight="700" style={{ fontSize: 36, lineHeight: 42 }}>
-            {averageScore}
-          </Text>
-          <Text variant="h3" color="muted" weight="600" style={{ marginLeft: 6, marginBottom: 4 }}>
-            / 100
-          </Text>
-          <Badge
-            label="Average Score"
-            variant="accent"
-            size="md"
-            style={{ marginLeft: 10 }}
-          />
-        </View>
-
-        {/* Dual Meta Stats */}
-        <View style={[styles.metaRow, { borderTopColor: colors.borderLight, marginTop: spacing.md, paddingTop: spacing.md }]}>
-          <View style={styles.metaItem}>
-            <Text variant="h3" color="primary" weight="700">
-              {highestScore}%
-            </Text>
-            <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
-              Best Score
-            </Text>
-          </View>
-
-          <View style={[styles.metaSeparator, { backgroundColor: colors.borderLight }]} />
-
-          <View style={styles.metaItem}>
-            <Text variant="h3" color="primary" weight="700">
-              {testsCompleted}
-            </Text>
-            <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
-              Evaluations
-            </Text>
-          </View>
-
-          <View style={[styles.metaSeparator, { backgroundColor: colors.borderLight }]} />
-
-          <View style={styles.metaItem}>
-            <Text variant="h3" color={isUp ? 'success' : 'secondary'} weight="700">
-              {isUp ? `+${deltaTrend}` : deltaTrend}
-            </Text>
-            <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
-              Point Delta
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Performance Progression Trend Card */}
-      {trendPoints.length >= 2 && (
+      {/* Background Sync Error Banner (Non-destructive) */}
+      {error && results.length > 0 && (
         <View
           style={[
-            styles.trendCard,
+            styles.syncErrorBanner,
+            {
+              backgroundColor: colors.dangerContainer,
+              borderColor: colors.danger,
+              borderRadius: borderRadius.md,
+              padding: spacing.sm,
+              marginBottom: spacing.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <Ionicons name="alert-circle-outline" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+          <Text variant="caption" color="danger" style={{ flex: 1 }}>
+            {error}
+          </Text>
+          <TouchableOpacity onPress={fetchData} activeOpacity={0.7}>
+            <Text variant="caption" color="danger" weight="700">
+              Retry
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {results.length === 0 ? (
+        <View
+          style={[
+            styles.emptyCard,
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
@@ -216,144 +173,238 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
             },
           ]}
         >
-          <View style={styles.trendHeader}>
-            <View>
-              <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8 }}>
-                SCORE PROGRESSION
-              </Text>
-              <Text variant="bodySmall" color="secondary" style={{ marginTop: 2 }}>
-                Evaluation by evaluation progression
-              </Text>
-            </View>
+          <EmptyState
+            iconName="trophy-outline"
+            title="No Test Results Available"
+            description="No published test results or evaluations are available yet for this academic session."
+          />
+        </View>
+      ) : (
+        <>
+        {/* Top Academic Performance Summary Card */}
+        <View
+          style={[
+            styles.kpiCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: borderRadius.lg,
+              padding: spacing.cardPadding,
+              marginBottom: spacing.lg,
+              ...shadows.sm,
+            },
+          ]}
+        >
+          <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8 }}>
+            YOUR OVERALL PERFORMANCE
+          </Text>
+
+          <View style={styles.kpiScoreRow}>
+            <Text variant="hero" color="primary" weight="700" style={{ fontSize: 36, lineHeight: 42 }}>
+              {averageScore}
+            </Text>
+            <Text variant="h3" color="muted" weight="600" style={{ marginLeft: 6, marginBottom: 4 }}>
+              / 100
+            </Text>
             <Badge
-              label={isUp ? `+${deltaTrend} pts` : `${deltaTrend} pts`}
-              variant={isUp ? 'success' : 'warning'}
-              size="sm"
+              label="Average Score"
+              variant="accent"
+              size="md"
+              style={{ marginLeft: 10 }}
             />
           </View>
 
-          {/* Bar track visualizer */}
-          <View style={styles.chartContainer}>
-            {trendPoints.map((point) => {
-              const heightPct = Math.max(15, Math.min(100, ((point.percentage - 70) / 30) * 100));
-              const isDistinction = point.percentage >= 90;
+          {/* Dual Meta Stats */}
+          <View style={[styles.metaRow, { borderTopColor: colors.borderLight, marginTop: spacing.md, paddingTop: spacing.md }]}>
+            <View style={styles.metaItem}>
+              <Text variant="h3" color="primary" weight="700">
+                {highestScore}%
+              </Text>
+              <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+                Best Score
+              </Text>
+            </View>
 
-              return (
-                <View key={point.id} style={styles.chartCol}>
-                  <Text variant="caption" color="primary" weight="700" style={{ fontSize: 10, marginBottom: 4 }}>
-                    {point.percentage}%
-                  </Text>
-                  <View style={[styles.chartTrack, { backgroundColor: colors.surfaceVariant }]}>
-                    <View
-                      style={[
-                        styles.chartFill,
-                        {
-                          height: `${heightPct}%`,
-                          backgroundColor: isDistinction ? colors.distinction : colors.accent,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text variant="caption" color="secondary" weight="600" style={{ marginTop: 4, fontSize: 10 }}>
-                    {point.label}
-                  </Text>
-                  <Text variant="caption" color="muted" style={{ fontSize: 9 }}>
-                    {point.date}
-                  </Text>
-                </View>
-              );
-            })}
+            <View style={[styles.metaSeparator, { backgroundColor: colors.borderLight }]} />
+
+            <View style={styles.metaItem}>
+              <Text variant="h3" color="primary" weight="700">
+                {testsCompleted}
+              </Text>
+              <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+                Evaluations
+              </Text>
+            </View>
+
+            <View style={[styles.metaSeparator, { backgroundColor: colors.borderLight }]} />
+
+            <View style={styles.metaItem}>
+              <Text variant="h3" color={isUp ? 'success' : 'secondary'} weight="700">
+                {isUp ? `+${deltaTrend}` : deltaTrend}
+              </Text>
+              <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+                Point Delta
+              </Text>
+            </View>
           </View>
         </View>
-      )}
 
-      {/* Test History List */}
-      <View
-        style={[
-          styles.historyCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-            borderRadius: borderRadius.lg,
-            padding: spacing.cardPadding,
-            marginBottom: spacing.lg,
-            ...shadows.sm,
-          },
-        ]}
-      >
-        <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8 }}>
-          TEST HISTORY
-        </Text>
+        {/* Performance Progression Trend Card */}
+        {trendPoints.length >= 2 && (
+          <View
+            style={[
+              styles.trendCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: borderRadius.lg,
+                padding: spacing.cardPadding,
+                marginBottom: spacing.lg,
+                ...shadows.sm,
+              },
+            ]}
+          >
+            <View style={styles.trendHeader}>
+              <View>
+                <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8 }}>
+                  SCORE PROGRESSION
+                </Text>
+                <Text variant="bodySmall" color="secondary" style={{ marginTop: 2 }}>
+                  Evaluation by evaluation progression
+                </Text>
+              </View>
+              <Badge
+                label={isUp ? `+${deltaTrend} pts` : `${deltaTrend} pts`}
+                variant={isUp ? 'success' : 'warning'}
+                size="sm"
+              />
+            </View>
 
-        {/* Table Column Header */}
-        <View style={[styles.tableHeader, { borderBottomColor: colors.borderLight, marginTop: spacing.sm }]}>
-          <Text variant="caption" color="muted" weight="700" style={{ width: 60 }}>
-            DATE
+            {/* Bar track visualizer */}
+            <View style={styles.chartContainer}>
+              {trendPoints.map((point) => {
+                const heightPct = Math.max(15, Math.min(100, ((point.percentage - 70) / 30) * 100));
+                const isDistinction = point.percentage >= 90;
+
+                return (
+                  <View key={point.id} style={styles.chartCol}>
+                    <Text variant="caption" color="primary" weight="700" style={{ fontSize: 10, marginBottom: 4 }}>
+                      {point.percentage}%
+                    </Text>
+                    <View style={[styles.chartTrack, { backgroundColor: colors.surfaceVariant }]}>
+                      <View
+                        style={[
+                          styles.chartFill,
+                          {
+                            height: `${heightPct}%`,
+                            backgroundColor: isDistinction ? colors.distinction : colors.accent,
+                          },
+                        ]}
+                      />
+                    </View>
+                    <Text variant="caption" color="secondary" weight="600" style={{ marginTop: 4, fontSize: 10 }}>
+                      {point.label}
+                    </Text>
+                    <Text variant="caption" color="muted" style={{ fontSize: 9 }}>
+                      {point.date}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Test History List */}
+        <View
+          style={[
+            styles.historyCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: borderRadius.lg,
+              padding: spacing.cardPadding,
+              marginBottom: spacing.lg,
+              ...shadows.sm,
+            },
+          ]}
+        >
+          <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8 }}>
+            TEST HISTORY
           </Text>
-          <Text variant="caption" color="muted" weight="700" style={{ flex: 1, paddingHorizontal: 8 }}>
-            ASSESSMENT
-          </Text>
-          <Text variant="caption" color="muted" weight="700" align="right" style={{ width: 75 }}>
-            SCORE
-          </Text>
+
+          {/* Table Column Header */}
+          <View style={[styles.tableHeader, { borderBottomColor: colors.borderLight, marginTop: spacing.sm }]}>
+            <Text variant="caption" color="muted" weight="700" style={{ width: 60 }}>
+              DATE
+            </Text>
+            <Text variant="caption" color="muted" weight="700" style={{ flex: 1, paddingHorizontal: 8 }}>
+              ASSESSMENT
+            </Text>
+            <Text variant="caption" color="muted" weight="700" align="right" style={{ width: 75 }}>
+              SCORE
+            </Text>
+          </View>
+
+          {/* Table Rows */}
+          {results.map((item, index) => {
+            const isLast = index === results.length - 1;
+            const pct = Math.round((item.score / item.maxScore) * 100);
+            const isDistinction = pct >= 90;
+
+            const dateObj = new Date(item.date);
+            const dateStr = !isNaN(dateObj.getTime())
+              ? dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+              : item.date;
+
+            return (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => handleSelectResult(item)}
+                activeOpacity={0.7}
+                style={[
+                  styles.tableRow,
+                  !isLast && { borderBottomColor: colors.borderLight, borderBottomWidth: 1 },
+                  { paddingVertical: spacing.md },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`View test result for ${item.testName}`}
+              >
+                <View style={{ width: 60 }}>
+                  <Text variant="bodySmall" color="secondary" weight="600">
+                    {dateStr}
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, paddingHorizontal: 8 }}>
+                  <Text variant="body" color="primary" weight="600" numberOfLines={1}>
+                    {item.testName}
+                  </Text>
+                  {item.subject && (
+                    <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+                      {item.subject}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={{ width: 75, alignItems: 'flex-end' }}>
+                  <Text variant="body" color="primary" weight="700">
+                    {item.score}/{item.maxScore}
+                  </Text>
+                  <Badge
+                    label={`${pct}%`}
+                    variant={isDistinction ? 'distinction' : 'accent'}
+                    size="sm"
+                    style={{ marginTop: 2 }}
+                  />
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* Table Rows */}
-        {results.map((item, index) => {
-          const isLast = index === results.length - 1;
-          const pct = Math.round((item.score / item.maxScore) * 100);
-          const isDistinction = pct >= 90;
-
-          const dateObj = new Date(item.date);
-          const dateStr = !isNaN(dateObj.getTime())
-            ? dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-            : item.date;
-
-          return (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => handleSelectResult(item)}
-              activeOpacity={0.7}
-              style={[
-                styles.tableRow,
-                !isLast && { borderBottomColor: colors.borderLight, borderBottomWidth: 1 },
-                { paddingVertical: spacing.md },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`View test result for ${item.testName}`}
-            >
-              <View style={{ width: 60 }}>
-                <Text variant="bodySmall" color="secondary" weight="600">
-                  {dateStr}
-                </Text>
-              </View>
-
-              <View style={{ flex: 1, paddingHorizontal: 8 }}>
-                <Text variant="body" color="primary" weight="600" numberOfLines={1}>
-                  {item.testName}
-                </Text>
-                {item.subject && (
-                  <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
-                    {item.subject}
-                  </Text>
-                )}
-              </View>
-
-              <View style={{ width: 75, alignItems: 'flex-end' }}>
-                <Text variant="body" color="primary" weight="700">
-                  {item.score}/{item.maxScore}
-                </Text>
-                <Badge
-                  label={`${pct}%`}
-                  variant={isDistinction ? 'distinction' : 'accent'}
-                  size="sm"
-                  style={{ marginTop: 2 }}
-                />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+        </>
+      )}
 
       {/* Test Result Detail Modal Sheet */}
       <TestResultDetailSheet
@@ -431,6 +482,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   historyCard: {
+    borderWidth: 1,
+  },
+  emptyCard: {
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 32,
+  },
+  syncErrorBanner: {
     borderWidth: 1,
   },
   tableHeader: {
