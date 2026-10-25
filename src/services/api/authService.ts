@@ -17,12 +17,16 @@ import {
   LoginCredentials,
   ForgotPasswordRequest,
   ResetPasswordSubmitRequest,
+  ApplicationStatusResult,
 } from '../../types/auth';
 import { ApiResponse } from '../../types/api';
 import {
   BackendTokenResponse,
   BackendUserProfileResponse,
   BackendMessageResponse,
+  BackendStudentSelfRegisterRequest,
+  BackendVerifyEmailRequest,
+  BackendResendVerificationRequest,
 } from '../../types/backend';
 import {
   MOCK_STUDENT_USER,
@@ -286,5 +290,205 @@ export const authService = {
       },
       timestamp: new Date().toISOString(),
     };
+  },
+
+  /**
+   * Registers a new student via POST /api/v1/auth/register/student.
+   * Account is created in PENDING_VERIFICATION status with a unique student code.
+   */
+  async registerStudent(
+    req: BackendStudentSelfRegisterRequest
+  ): Promise<ApiResponse<BackendMessageResponse>> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(450);
+      return {
+        success: true,
+        data: {
+          success: true,
+          message: 'Registration submitted successfully. Please check your email to verify your address.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const payload = {
+      name: req.name.trim(),
+      email: req.email.trim().toLowerCase(),
+      phone: req.phone?.trim() || null,
+      password: req.password,
+      class_id: req.class_id,
+      batch_id: req.batch_id,
+    };
+
+    const res = await apiClient.post<BackendMessageResponse>('/auth/register/student', payload);
+    return {
+      success: true,
+      data: res.data || {
+        success: true,
+        message: 'Registration submitted successfully. Please check your email to verify your address.',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Verifies applicant email via POST /api/v1/auth/verify-email.
+   * Moves account from PENDING_VERIFICATION to PENDING_APPROVAL.
+   */
+  async verifyEmail(
+    token: string,
+    email?: string
+  ): Promise<ApiResponse<BackendMessageResponse>> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return {
+        success: true,
+        data: {
+          success: true,
+          message: 'Email verified successfully. Your account is now pending administrator approval.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const payload: BackendVerifyEmailRequest = {
+      token: token.trim(),
+      email: email?.trim().toLowerCase() || null,
+    };
+
+    const res = await apiClient.post<BackendMessageResponse>('/auth/verify-email', payload);
+    return {
+      success: true,
+      data: res.data || {
+        success: true,
+        message: 'Email verified successfully. Your account is now pending administrator approval.',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Resends verification email via POST /api/v1/auth/resend-verification.
+   */
+  async resendVerification(email: string): Promise<ApiResponse<BackendMessageResponse>> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return {
+        success: true,
+        data: {
+          success: true,
+          message: 'If an account exists with this email address, a verification link has been sent.',
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const res = await apiClient.post<BackendMessageResponse>('/auth/resend-verification', {
+      email: email.trim().toLowerCase(),
+    });
+
+    return {
+      success: true,
+      data: res.data || {
+        success: true,
+        message: 'If an account exists with this email address, a verification link has been sent.',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Securely checks applicant status using student email & password.
+   * Leverages real backend authentication status responses without exposing unauthenticated data.
+   */
+  async checkApplicationStatus(credentials: {
+    email: string;
+    password: string;
+  }): Promise<ApplicationStatusResult> {
+    const cleanEmail = credentials.email.trim().toLowerCase();
+
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(400);
+      return {
+        status: 'PENDING_APPROVAL',
+        message: 'Your registration is awaiting verification by the Fundamics administration team.',
+        email: cleanEmail,
+        studentName: 'Applicant Scholar',
+      };
+    }
+
+    try {
+      const loginPayload = {
+        email: cleanEmail,
+        password: credentials.password,
+        device_info: 'Fundemics Status Checker (' + Platform.OS + ')',
+      };
+
+      const loginRes = await apiClient.post<BackendTokenResponse>('/auth/login', loginPayload);
+
+      if (loginRes.data?.access_token) {
+        // Account is ACTIVE and APPROVED!
+        const token = loginRes.data.access_token;
+        apiClient.setToken(token);
+        const profileRes = await apiClient.get<BackendUserProfileResponse>('/auth/me');
+        const profile = profileRes.data;
+
+        return {
+          status: 'APPROVED',
+          message: 'Application Approved! Your student account is active.',
+          email: cleanEmail,
+          studentCode: profile?.student_code || null,
+          studentName: profile?.name || null,
+          studentId: profile?.student_id || profile?.id || null,
+          accessToken: token,
+        };
+      }
+
+      return {
+        status: 'PENDING_APPROVAL',
+        message: 'Application is under review by the administration team.',
+        email: cleanEmail,
+      };
+    } catch (err: any) {
+      const msg = err?.rawMessage || err?.message || '';
+
+      if (msg.includes('PENDING_VERIFICATION')) {
+        return {
+          status: 'PENDING_VERIFICATION',
+          message: 'Email verification required. Please click the verification link sent to your email or enter your token below.',
+          email: cleanEmail,
+        };
+      }
+
+      if (msg.includes('PENDING_APPROVAL')) {
+        return {
+          status: 'PENDING_APPROVAL',
+          message: 'Application Under Review. Your registration has been received and is awaiting administrative verification by Fundamics Lucknow Campus.',
+          email: cleanEmail,
+        };
+      }
+
+      if (msg.includes('REJECTED')) {
+        return {
+          status: 'REJECTED',
+          message: 'Registration Not Approved. Your application could not be approved at this time. Please contact the campus office for assistance.',
+          email: cleanEmail,
+        };
+      }
+
+      if (msg.toLowerCase().includes('invalid email or password')) {
+        return {
+          status: 'INVALID_CREDENTIALS',
+          message: 'The email or password does not match our records. Please double-check your credentials.',
+          email: cleanEmail,
+        };
+      }
+
+      return {
+        status: 'ERROR',
+        message: msg || 'Unable to verify status at this moment. Please check your connection and retry.',
+        email: cleanEmail,
+      };
+    }
   },
 };

@@ -16,8 +16,9 @@ export const CompactNoticesRow: React.FC<CompactNoticesRowProps> = ({
   onViewAll,
   onNoticePress,
 }) => {
-  const { colors, spacing, borderRadius } = useTheme();
+  const { colors, spacing, borderRadius, shadows } = useTheme();
 
+  // Show only if actual backend data exists per Phase 4 requirement
   if (!notices || notices.length === 0) return null;
 
   // Show at most 2 compact notices on the home screen
@@ -27,12 +28,13 @@ export const CompactNoticesRow: React.FC<CompactNoticesRowProps> = ({
     <View
       style={[
         styles.container,
+        shadows.sm,
         {
           backgroundColor: colors.surface,
           borderColor: colors.border,
-          borderRadius: borderRadius.md,
+          borderRadius: borderRadius.lg,
           padding: spacing.cardPadding,
-          marginBottom: spacing.massive,
+          marginBottom: spacing.lg,
         },
       ]}
     >
@@ -49,7 +51,7 @@ export const CompactNoticesRow: React.FC<CompactNoticesRowProps> = ({
             accessibilityRole="button"
             accessibilityLabel="View all notices"
           >
-            <Text variant="caption" color="accent" weight="700">
+            <Text variant="caption" color="secondary" weight="700">
               Archives →
             </Text>
           </TouchableOpacity>
@@ -78,11 +80,11 @@ export const CompactNoticesRow: React.FC<CompactNoticesRowProps> = ({
                 <Text variant="bodySmall" color="primary" weight="600" numberOfLines={1}>
                   {notice.title}
                 </Text>
-                <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+                <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
                   {notice.date} · {notice.category}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} style={{ marginLeft: 6 }} />
+              <Ionicons name="chevron-forward" size={14} color={colors.textSecondary} style={{ marginLeft: 6 }} />
             </TouchableOpacity>
           );
         })}

@@ -7,8 +7,8 @@ export const borderRadius = {
   xs: 4,
   sm: 6,
   md: 10,
-  lg: 14,
-  xl: 18,
+  lg: 16, // Standard card radius (Phase 3: 16–20)
+  xl: 20, // Elevated cards
   pill: 28,
   full: 9999,
 } as const;

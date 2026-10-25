@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -7,7 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
@@ -17,32 +17,31 @@ import { Card } from '../../../components/common/Card';
 import { Badge } from '../../../components/common/Badge';
 import { Input } from '../../../components/forms/Input';
 import { useAuth } from '../../../app/providers/AuthContext';
-import { UserRole } from '../../../types/auth';
 import { AuthStackParamList } from '../../../app/navigation/types';
 
 type LoginNavProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
-
-const ROLES: { role: UserRole; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { role: 'STUDENT', label: 'Student', icon: 'school-outline' },
-  { role: 'TEACHER', label: 'Faculty', icon: 'person-outline' },
-  { role: 'ADMIN', label: 'Admin', icon: 'shield-checkmark-outline' },
-];
+type LoginRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
 export const LoginScreen: React.FC = () => {
   const { colors, spacing, borderRadius } = useTheme();
   const navigation = useNavigation<LoginNavProp>();
+  const route = useRoute<LoginRouteProp>();
   const { login, isLoading, error, clearError } = useAuth();
 
-  const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-    clearError();
-    setValidationError(null);
-  };
+  // If navigated with prefilled email
+  useEffect(() => {
+    if (route.params?.prefillEmail) {
+      setIdentifier(route.params.prefillEmail);
+    }
+  }, [route.params?.prefillEmail]);
+
+  const isPendingVerification = error?.includes('PENDING_VERIFICATION');
+  const isPendingApproval = error?.includes('PENDING_APPROVAL');
+  const isRejected = error?.includes('REJECTED');
 
   const handleLogin = async () => {
     setValidationError(null);
@@ -52,11 +51,7 @@ export const LoginScreen: React.FC = () => {
     const trimmedPwd = password.trim();
 
     if (!trimmedId) {
-      setValidationError(
-        selectedRole === 'STUDENT'
-          ? 'Please enter your Admission Number or Mobile'
-          : 'Please enter your Mobile or Official Email'
-      );
+      setValidationError('Please enter your Student Email or Admission No.');
       return;
     }
 
@@ -68,7 +63,7 @@ export const LoginScreen: React.FC = () => {
     await login({
       identifier: trimmedId,
       password: trimmedPwd,
-      selectedRole,
+      selectedRole: 'STUDENT',
     });
   };
 
@@ -96,76 +91,33 @@ export const LoginScreen: React.FC = () => {
               },
             ]}
           >
-            <Ionicons name="book-outline" size={32} color={colors.primary} />
+            <Ionicons name="school-outline" size={34} color={colors.primary} />
           </View>
           <Text variant="h1" color="primary" weight="700">
-            Fundemics LMS
+            Fundamics LMS
           </Text>
           <Text variant="body" color="secondary" style={{ marginTop: 4 }}>
-            Sign in to access your coaching portal
+            Student Academic Portal • Lucknow Campus
           </Text>
         </View>
 
-        {/* Role Segmented Selector */}
-        <View
-          style={[
-            styles.roleSelector,
-            {
-              backgroundColor: colors.surfaceVariant,
-              borderRadius: borderRadius.md,
-              padding: 4,
-              marginBottom: spacing.lg,
-            },
-          ]}
-        >
-          {ROLES.map((r) => {
-            const isSelected = selectedRole === r.role;
-            return (
-              <TouchableOpacity
-                key={r.role}
-                onPress={() => handleRoleSelect(r.role)}
-                activeOpacity={0.8}
-                style={[
-                  styles.roleTab,
-                  {
-                    backgroundColor: isSelected ? colors.surface : 'transparent',
-                    borderRadius: borderRadius.sm,
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-              >
-                <Ionicons
-                  name={r.icon}
-                  size={16}
-                  color={isSelected ? colors.primary : colors.textMuted}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  variant="buttonSmall"
-                  color={isSelected ? 'primary' : 'muted'}
-                  weight={isSelected ? '600' : '400'}
-                >
-                  {r.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Form Container */}
+        {/* Student Sign In Card */}
         <Card elevation="sm" padding="lg">
+          <Text variant="subtitle" color="primary" weight="700" style={{ marginBottom: spacing.xs }}>
+            Student Sign In
+          </Text>
+          <Text variant="bodySmall" color="secondary" style={{ marginBottom: spacing.md }}>
+            Access your classes, attendance records, study material, and test scorecards.
+          </Text>
+
           <Input
-            label={selectedRole === 'STUDENT' ? 'Student Email / Admission No' : 'Official Email / ID'}
-            placeholder={
-              selectedRole === 'STUDENT'
-                ? 'e.g. rohan.sharma@example.com or FND-2026-101'
-                : 'e.g. sunita.rao@fundamics.com'
-            }
+            label="Student Email or Admission No."
+            placeholder="e.g. aryan@example.com or STU-2026-6BDD84"
             value={identifier}
             onChangeText={(text) => {
               setIdentifier(text);
               if (validationError) setValidationError(null);
+              if (error) clearError();
             }}
             autoCapitalize="none"
             leftIcon={<Ionicons name="person-outline" size={18} color={colors.textSecondary} />}
@@ -173,11 +125,12 @@ export const LoginScreen: React.FC = () => {
 
           <Input
             label="Password"
-            placeholder="Enter password"
+            placeholder="Enter your student password"
             value={password}
             onChangeText={(text) => {
               setPassword(text);
               if (validationError) setValidationError(null);
+              if (error) clearError();
             }}
             isPassword
             leftIcon={<Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />}
@@ -185,7 +138,7 @@ export const LoginScreen: React.FC = () => {
 
           <View style={styles.actionRow}>
             <TouchableOpacity
-              onPress={() => navigation.navigate('ForgotPassword')}
+              onPress={() => navigation.navigate('ForgotPassword', { email: identifier.trim() })}
               activeOpacity={0.7}
               accessibilityRole="button"
             >
@@ -195,7 +148,99 @@ export const LoginScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {(validationError || error) && (
+          {/* Dedicated Status Banner for Pending/Rejected Applicants */}
+          {(isPendingVerification || isPendingApproval || isRejected) && (
+            <View
+              style={[
+                styles.statusBanner,
+                {
+                  backgroundColor: isRejected
+                    ? colors.dangerContainer
+                    : isPendingVerification
+                    ? colors.warningContainer
+                    : colors.primaryContainer,
+                  borderColor: isRejected
+                    ? colors.danger
+                    : isPendingVerification
+                    ? colors.warning
+                    : colors.primary,
+                  borderRadius: borderRadius.md,
+                  padding: spacing.md,
+                  marginBottom: spacing.md,
+                },
+              ]}
+            >
+              <View style={styles.statusBannerHeader}>
+                <Ionicons
+                  name={
+                    isRejected
+                      ? 'close-circle-outline'
+                      : isPendingVerification
+                      ? 'mail-unread-outline'
+                      : 'time-outline'
+                  }
+                  size={20}
+                  color={
+                    isRejected
+                      ? colors.danger
+                      : isPendingVerification
+                      ? colors.warning
+                      : colors.primary
+                  }
+                />
+                <Text
+                  variant="subtitle"
+                  color={isRejected ? 'danger' : 'primary'}
+                  weight="700"
+                  style={{ marginLeft: spacing.xs }}
+                >
+                  {isPendingVerification
+                    ? 'Email Verification Required'
+                    : isPendingApproval
+                    ? 'Application Under Review'
+                    : 'Registration Not Approved'}
+                </Text>
+              </View>
+
+              <Text variant="caption" color="secondary" style={{ marginVertical: spacing.xs, lineHeight: 18 }}>
+                {isPendingVerification
+                  ? 'Your account has been registered, but your email address has not yet been verified.'
+                  : isPendingApproval
+                  ? 'Your registration is awaiting approval by the Fundamics Lucknow Campus administration team.'
+                  : 'Your student application could not be approved at this time. Please contact the campus office.'}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate('ApplicationStatus', {
+                    email: identifier.trim(),
+                    initialStatus: isPendingVerification
+                      ? 'PENDING_VERIFICATION'
+                      : isPendingApproval
+                      ? 'PENDING_APPROVAL'
+                      : 'REJECTED',
+                  })
+                }
+                style={[
+                  styles.statusBannerButton,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    borderRadius: borderRadius.sm,
+                    marginTop: spacing.xs,
+                  },
+                ]}
+              >
+                <Ionicons name="search-outline" size={14} color={colors.primary} />
+                <Text variant="caption" color="primary" weight="700" style={{ marginLeft: 6 }}>
+                  {isPendingVerification ? 'Verify Email / Check Status' : 'Check Application Status'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Standard Error Notice */}
+          {!isPendingVerification && !isPendingApproval && !isRejected && (validationError || error) && (
             <View
               style={[
                 styles.errorContainer,
@@ -207,14 +252,15 @@ export const LoginScreen: React.FC = () => {
                 },
               ]}
             >
-              <Text variant="caption" color="danger">
+              <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+              <Text variant="caption" color="danger" style={{ flex: 1, marginLeft: spacing.xs }}>
                 {validationError || error}
               </Text>
             </View>
           )}
 
           <Button
-            title={`Sign In as ${selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}`}
+            title="Sign In to Student Portal"
             onPress={handleLogin}
             loading={isLoading}
             variant="primary"
@@ -224,11 +270,70 @@ export const LoginScreen: React.FC = () => {
           />
         </Card>
 
+        {/* New Student Registration Banner */}
+        <Card
+          elevation="none"
+          padding="md"
+          style={[
+            styles.registerCard,
+            {
+              backgroundColor: colors.surfaceVariant,
+              borderColor: colors.border,
+              borderRadius: borderRadius.md,
+              marginTop: spacing.lg,
+            },
+          ]}
+        >
+          <View style={styles.registerRow}>
+            <View style={{ flex: 1 }}>
+              <Text variant="subtitle" color="primary" weight="700">
+                New to Fundamics?
+              </Text>
+              <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
+                Apply for admission in Class 10 & 12 Science batches.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Register')}
+              style={[
+                styles.registerButton,
+                {
+                  backgroundColor: colors.primary,
+                  borderRadius: borderRadius.sm,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Register as new student"
+            >
+              <Text variant="buttonSmall" color="inverse" weight="700">
+                Register Here
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Card>
+
+        {/* Track Application Status Shortcut */}
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('ApplicationStatus', {
+              email: identifier.trim() || undefined,
+            })
+          }
+          style={[styles.statusLinkRow, { marginTop: spacing.md }]}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="clipboard-outline" size={16} color={colors.primary} />
+          <Text variant="bodySmall" color="primary" weight="600" style={{ marginLeft: 6 }}>
+            Already applied? Check Application Status
+          </Text>
+        </TouchableOpacity>
+
         {/* Institutional Contact Bar */}
         <View style={[styles.contactCard, { marginTop: spacing.xl }]}>
-          <Badge label="Lucknow Flagship Campus" variant="neutral" size="sm" />
+          <Badge label="Lucknow Flagship Campus • Triveni Nagar" variant="neutral" size="sm" />
           <Text variant="caption" color="muted" align="center" style={{ marginTop: spacing.xs }}>
-            For admissions or portal access support, call{' '}
+            For admissions inquiry or portal access assistance, call{' '}
             <Text variant="caption" color="accent" weight="700">
               +91 7617018888
             </Text>
@@ -253,16 +358,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  roleSelector: {
-    flexDirection: 'row',
-  },
-  roleTab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -273,6 +368,41 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  statusBanner: {
+    borderWidth: 1,
+  },
+  statusBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusBannerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  registerCard: {
+    borderWidth: 1,
+  },
+  registerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  registerButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginLeft: 8,
+  },
+  statusLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
   },
   contactCard: {
     alignItems: 'center',

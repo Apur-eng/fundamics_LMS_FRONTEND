@@ -11,12 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
 import { Badge } from '../../../components/common/Badge';
-import { studentService, computePerformanceMetrics, mapBackendResults } from '../../../services/api/studentService';
-import { RecentResultItem, PerformanceMetrics } from '../../../types/dashboard';
+import { studentService, computePerformanceMetrics, mapBackendResults, extractResultDocuments } from '../../../services/api/studentService';
+import { RecentResultItem, PerformanceMetrics, ResultDocumentItem } from '../../../types/dashboard';
 import { LoadingState } from '../../../components/feedback/LoadingState';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { EmptyState } from '../../../components/feedback/EmptyState';
 import { TestResultDetailSheet } from '../components/TestResultDetailSheet';
+import { StudentResultDocumentsCard } from '../components/StudentResultDocumentsCard';
 
 export interface StudentResultsScreenProps {
   onBack?: () => void;
@@ -31,6 +32,7 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
   const [error, setError] = useState<string | null>(null);
 
   const [results, setResults] = useState<RecentResultItem[]>([]);
+  const [documents, setDocuments] = useState<ResultDocumentItem[]>([]);
   const [metrics, setMetrics] = useState<PerformanceMetrics>(() => computePerformanceMetrics([]));
   const [selectedResult, setSelectedResult] = useState<RecentResultItem | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -43,9 +45,11 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
         const mapped = mapBackendResults(rawResults);
         setResults(mapped);
         setMetrics(computePerformanceMetrics(rawResults));
+        setDocuments(extractResultDocuments(rawResults));
       } else {
         setResults([]);
         setMetrics(computePerformanceMetrics([]));
+        setDocuments([]);
       }
     } catch (err: any) {
       setError(err?.message || 'Unable to load examination results');
@@ -314,6 +318,9 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
             </View>
           </View>
         )}
+
+        {/* Official Scorecards & PDF Reports */}
+        <StudentResultDocumentsCard documents={documents} />
 
         {/* Test History List */}
         <View

@@ -241,9 +241,26 @@ class ApiClient {
       }
 
       if (response.status === 401) {
-        // Prevent recursive 401 storms, especially during logout requests
+        const isLoginRequest = endpoint.includes('/auth/login');
         const isLogoutRequest = endpoint.includes('/auth/logout');
-        if (!isLogoutRequest && !this.isHandlingUnauthorized) {
+
+        let serverMessage = 'Session expired. Please sign in again.';
+        let errorBody: any = null;
+
+        try {
+          errorBody = await response.json();
+          if (errorBody?.error?.message) {
+            serverMessage = errorBody.error.message;
+          } else if (errorBody?.detail) {
+            serverMessage = typeof errorBody.detail === 'string' ? errorBody.detail : JSON.stringify(errorBody.detail);
+          } else if (errorBody?.message) {
+            serverMessage = errorBody.message;
+          }
+        } catch {
+          // Response body was empty or not JSON
+        }
+
+        if (!isLoginRequest && !isLogoutRequest && !this.isHandlingUnauthorized) {
           this.isHandlingUnauthorized = true;
           try {
             this.unauthorizedHandler?.();
@@ -253,11 +270,12 @@ class ApiClient {
             }, 1000);
           }
         }
-        const formatted = categorizeApiError(401, 'Session expired. Please sign in again.', 'UNAUTHORIZED');
+
+        const formatted = categorizeApiError(401, serverMessage, 'UNAUTHORIZED');
         throw new ApiError(
-          formatted.message,
+          serverMessage,
           401,
-          null,
+          errorBody,
           'UNAUTHORIZED',
           formatted.title,
           formatted.category

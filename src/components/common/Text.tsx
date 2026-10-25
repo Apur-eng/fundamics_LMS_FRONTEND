@@ -18,6 +18,15 @@ export type TextColor =
   | 'distinction'
   | 'gold'
   | 'emerald'
+  | 'navy'
+  | 'primaryBlue'
+  | 'violet'
+  | 'skyBlue'
+  | 'amber'
+  | 'coral'
+  | 'brandBlue'
+  | 'brandGreen'
+  | 'warmGold'
   | 'danger'
   | 'warning'
   | 'success'
@@ -56,6 +65,25 @@ export const Text: React.FC<TextProps> = ({
       case 'inverseMuted':
         return colors.textInverseMuted;
       case 'emerald':
+        return colors.emerald;
+      case 'navy':
+        return colors.navy;
+      case 'primaryBlue':
+        return colors.primaryBlue;
+      case 'violet':
+        return colors.violet;
+      case 'skyBlue':
+        return colors.skyBlue;
+      case 'amber':
+        return colors.amber;
+      case 'coral':
+        return colors.coral;
+      case 'brandBlue':
+        return colors.brandBlue;
+      case 'brandGreen':
+        return colors.brandGreen;
+      case 'warmGold':
+        return colors.warmGold;
       case 'accent':
         return colors.accent;
       case 'gold':

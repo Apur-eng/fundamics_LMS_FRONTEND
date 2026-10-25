@@ -41,13 +41,12 @@ export const Badge: React.FC<BadgeProps> = ({
       case 'primary':
         return { bg: colors.primaryContainer, textCol: 'primary' };
       case 'emerald':
+      case 'success':
+        return { bg: colors.surfaceMint, textCol: 'emerald' };
       case 'accent':
-        return { bg: colors.accentContainer, textCol: 'accent' };
       case 'gold':
       case 'distinction':
-        return { bg: colors.distinctionContainer, textCol: 'distinction' };
-      case 'success':
-        return { bg: colors.successContainer, textCol: 'success' };
+        return { bg: colors.surfaceAmber, textCol: 'accent' };
       case 'warning':
         return { bg: colors.warningContainer, textCol: 'warning' };
       case 'danger':

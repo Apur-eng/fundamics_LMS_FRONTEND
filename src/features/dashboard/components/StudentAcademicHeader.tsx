@@ -37,31 +37,20 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
           backgroundColor: colors.surface,
           borderColor: colors.border,
           borderRadius: borderRadius.lg,
+          padding: spacing.cardPadding,
           marginBottom: spacing.lg,
         },
       ]}
     >
-      {/* Top bar: Fundemics brand + avatar + logout */}
-      <View
-        style={[
-          styles.topBar,
-          {
-            backgroundColor: colors.primary,
-            borderTopLeftRadius: borderRadius.lg,
-            borderTopRightRadius: borderRadius.lg,
-            paddingHorizontal: spacing.cardPadding,
-            paddingVertical: 10,
-          },
-        ]}
-      >
-        {/* Brand */}
-        <View style={styles.brandRow}>
+      {/* 1. Compact Brand & Utility Bar */}
+      <View style={styles.topBrandBar}>
+        <View style={styles.brandGroup}>
           <View
             style={[
-              styles.monogram,
+              styles.monogramBox,
               {
-                backgroundColor: 'rgba(255,255,255,0.18)',
-                borderColor: 'rgba(255,255,255,0.30)',
+                backgroundColor: colors.primary,
+                borderRadius: borderRadius.xs,
               },
             ]}
           >
@@ -70,53 +59,52 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
             </Text>
           </View>
           <View style={{ marginLeft: 8 }}>
-            <Text style={styles.brandTitle} color="inverse" weight="800">
+            <Text style={styles.brandTitle} color="primary" weight="800">
               FUNDAMICS
             </Text>
-            <Text style={styles.brandSub} color="inverse" weight="500">
+            <Text style={styles.brandSub} color="secondary" weight="500">
               Academic Portal · 2026–27
             </Text>
           </View>
         </View>
 
-        {/* Avatar + Logout */}
+        {/* Right: Avatar + Logout */}
         <View style={styles.rightActions}>
           <View
             style={[
               styles.avatarRing,
-              { borderColor: 'rgba(255,255,255,0.4)' },
+              { borderColor: colors.border, backgroundColor: colors.surfaceVariant },
             ]}
           >
-            <Avatar name={studentName} size={32} accent="distinction" />
+            <Avatar name={studentName} size={30} accent="primary" />
           </View>
           <TouchableOpacity
             onPress={logout}
             activeOpacity={0.7}
             style={[
               styles.logoutBtn,
-              { backgroundColor: 'rgba(255,255,255,0.15)', borderColor: 'rgba(255,255,255,0.25)' },
+              {
+                backgroundColor: colors.surfaceVariant,
+                borderColor: colors.border,
+              },
             ]}
             accessibilityRole="button"
             accessibilityLabel="Sign out"
           >
-            <Ionicons name="log-out-outline" size={15} color="rgba(255,255,255,0.85)" />
+            <Ionicons name="log-out-outline" size={15} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Identity panel — white body */}
-      <View
-        style={[
-          styles.identityPanel,
-          { paddingHorizontal: spacing.cardPadding, paddingTop: spacing.md, paddingBottom: spacing.md },
-        ]}
-      >
-        {/* Greeting */}
-        <Text variant="caption" color="muted" weight="600" style={styles.greeting}>
+      {/* Subtle Divider */}
+      <View style={[styles.divider, { backgroundColor: colors.borderLight, marginVertical: spacing.md }]} />
+
+      {/* 2. Student Greeting & Prominent Identity */}
+      <View style={styles.identityContent}>
+        <Text variant="caption" color="secondary" weight="600" style={styles.greeting}>
           {greeting.toUpperCase()}
         </Text>
 
-        {/* Student name */}
         <Text
           variant="h2"
           color="primary"
@@ -127,7 +115,6 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
           {studentName}
         </Text>
 
-        {/* Programme subtitle */}
         <Text
           variant="bodySmall"
           color="secondary"
@@ -137,7 +124,7 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
           {programmeSubtitle}
         </Text>
 
-        {/* Meta chips */}
+        {/* 3. Secondary Metadata Chips */}
         <View style={styles.chipRow}>
           {admissionNumber && (
             <View
@@ -145,13 +132,13 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
                 styles.chip,
                 {
                   backgroundColor: colors.primaryContainer,
-                  borderColor: colors.borderFocus + '40',
+                  borderColor: colors.border,
                 },
               ]}
             >
               <Ionicons
                 name="id-card-outline"
-                size={10}
+                size={11}
                 color={colors.primary}
                 style={{ marginRight: 4 }}
               />
@@ -168,13 +155,12 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
                 {
                   backgroundColor: colors.surfaceVariant,
                   borderColor: colors.border,
-                  marginLeft: admissionNumber ? spacing.xs : 0,
                 },
               ]}
             >
               <Ionicons
                 name="business-outline"
-                size={10}
+                size={11}
                 color={colors.textSecondary}
                 style={{ marginRight: 4 }}
               />
@@ -192,22 +178,19 @@ export const StudentAcademicHeader: React.FC<StudentAcademicHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     borderWidth: 1,
-    overflow: 'hidden',
   },
-  topBar: {
+  topBrandBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  brandRow: {
+  brandGroup: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  monogram: {
-    width: 28,
-    height: 28,
-    borderRadius: 7,
-    borderWidth: 1,
+  monogramBox: {
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -217,12 +200,11 @@ const styles = StyleSheet.create({
   },
   brandTitle: {
     fontSize: 12,
-    letterSpacing: 1.6,
+    letterSpacing: 1.4,
   },
   brandSub: {
     fontSize: 9,
-    letterSpacing: 0.3,
-    opacity: 0.75,
+    letterSpacing: 0.2,
     marginTop: 1,
   },
   rightActions: {
@@ -231,8 +213,8 @@ const styles = StyleSheet.create({
   },
   avatarRing: {
     padding: 1.5,
-    borderWidth: 1.5,
-    borderRadius: 20,
+    borderWidth: 1,
+    borderRadius: 18,
   },
   logoutBtn: {
     width: 30,
@@ -243,21 +225,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  identityPanel: {},
+  divider: {
+    height: 1,
+  },
+  identityContent: {},
   greeting: {
-    letterSpacing: 1.1,
+    letterSpacing: 0.9,
     fontSize: 10,
     marginBottom: 2,
   },
   studentName: {
     letterSpacing: -0.3,
-    marginTop: 1,
   },
   chipRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginTop: 10,
+    marginTop: 8,
     gap: 6,
   },
   chip: {
@@ -266,10 +250,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 5,
+    borderRadius: 6,
   },
   chipText: {
     fontSize: 10,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 });

@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,26 +27,26 @@ const StudentTabNavigator: React.FC = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,       // Academic deep blue (#075B86)
-        tabBarInactiveTintColor: '#A0B0BC',           // Muted blue-grey
+        tabBarActiveTintColor: colors.navy,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',               // Pure white bar
-          borderTopColor: '#E4EBF0',                // Soft blue-grey border
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           height: tabHeight,
           paddingBottom: tabPaddingBottom,
-          paddingTop: 6,
-          // Subtle elevation for the bar
-          shadowColor: '#087BAF',
+          paddingTop: 5,
+          shadowColor: '#000000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 8,
+          shadowOpacity: 0.04,
+          shadowRadius: 6,
+          elevation: 6,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
-          letterSpacing: 0.2,
+          letterSpacing: 0.1,
+          marginTop: 1,
         },
       }}
     >
@@ -55,7 +56,16 @@ const StudentTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 2,
+                borderRadius: 12,
+                backgroundColor: focused ? colors.navyContainer : 'transparent',
+              }}
+            >
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={size - 1} color={color} />
+            </View>
           ),
         }}
       />
@@ -65,7 +75,16 @@ const StudentTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Classes',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'book' : 'book-outline'} size={size} color={color} />
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 2,
+                borderRadius: 12,
+                backgroundColor: focused ? colors.navyContainer : 'transparent',
+              }}
+            >
+              <Ionicons name={focused ? 'book' : 'book-outline'} size={size - 1} color={color} />
+            </View>
           ),
         }}
       />
@@ -75,7 +94,16 @@ const StudentTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Homework',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={size} color={color} />
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 2,
+                borderRadius: 12,
+                backgroundColor: focused ? colors.navyContainer : 'transparent',
+              }}
+            >
+              <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={size - 1} color={color} />
+            </View>
           ),
         }}
       />
@@ -85,7 +113,16 @@ const StudentTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Results',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={size} color={color} />
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 2,
+                borderRadius: 12,
+                backgroundColor: focused ? colors.navyContainer : 'transparent',
+              }}
+            >
+              <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={size - 1} color={color} />
+            </View>
           ),
         }}
       />
@@ -95,7 +132,16 @@ const StudentTabNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Notices',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={size} color={color} />
+            <View
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 2,
+                borderRadius: 12,
+                backgroundColor: focused ? colors.navyContainer : 'transparent',
+              }}
+            >
+              <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={size - 1} color={color} />
+            </View>
           ),
         }}
       />

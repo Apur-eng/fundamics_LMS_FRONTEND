@@ -19,13 +19,13 @@ export const shadows: Record<'none' | 'sm' | 'md' | 'lg', ViewStyle> = {
   sm: {
     ...Platform.select({
       ios: {
-        shadowColor: '#087BAF',
+        shadowColor: '#17324D',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.07,
-        shadowRadius: 4,
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
       },
       android: {
-        elevation: 2,
+        elevation: 1,
       },
       default: {},
     }),
@@ -33,13 +33,13 @@ export const shadows: Record<'none' | 'sm' | 'md' | 'lg', ViewStyle> = {
   md: {
     ...Platform.select({
       ios: {
-        shadowColor: '#075B86',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.09,
-        shadowRadius: 8,
+        shadowColor: '#17324D',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 4,
+        elevation: 2,
       },
       default: {},
     }),
@@ -47,13 +47,13 @@ export const shadows: Record<'none' | 'sm' | 'md' | 'lg', ViewStyle> = {
   lg: {
     ...Platform.select({
       ios: {
-        shadowColor: '#075B86',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.11,
-        shadowRadius: 14,
+        shadowColor: '#17324D',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
       },
       android: {
-        elevation: 8,
+        elevation: 4,
       },
       default: {},
     }),

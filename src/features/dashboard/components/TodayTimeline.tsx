@@ -11,7 +11,7 @@ export interface TodayTimelineProps {
 }
 
 export const TodayTimeline: React.FC<TodayTimelineProps> = ({
-  classes,
+  classes = [],
   onClassPress,
 }) => {
   const { colors, spacing, borderRadius, shadows } = useTheme();
@@ -38,10 +38,10 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
         },
       ]}
     >
-      {/* Header */}
+      {/* 1. Clean Header */}
       <View style={styles.headerRow}>
         <View>
-          <Text variant="academicLabel" color="secondary" style={{ letterSpacing: 1.1 }}>
+          <Text variant="academicLabel" color="primary" style={{ letterSpacing: 0.8, fontSize: 11 }}>
             TIMETABLE · TODAY'S SESSIONS
           </Text>
           <Text variant="h4" color="primary" weight="700" style={{ marginTop: 2 }}>
@@ -49,7 +49,15 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
           </Text>
         </View>
 
-        <View style={[styles.countBadge, { backgroundColor: colors.surfaceVariant, borderColor: colors.border, borderWidth: 1 }]}>
+        <View
+          style={[
+            styles.countBadge,
+            {
+              backgroundColor: colors.surfaceVariant,
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <Text variant="caption" color="secondary" weight="700">
             {classes.length} {classes.length === 1 ? 'Session' : 'Sessions'}
           </Text>
@@ -59,7 +67,7 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
       {/* Divider */}
       <View style={[styles.divider, { backgroundColor: colors.borderLight, marginVertical: spacing.md }]} />
 
-      {/* Classes Timeline */}
+      {/* 2. Classes Timeline OR Compact Empty State */}
       {classes && classes.length > 0 ? (
         <View style={styles.timelineList}>
           {classes.map((cls, index) => {
@@ -74,14 +82,14 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                 style={styles.timelineRow}
                 accessibilityRole={onClassPress ? 'button' : 'none'}
               >
-                {/* Left Timeline Indicator Column */}
+                {/* Left Indicator Column */}
                 <View style={styles.indicatorCol}>
                   <View
                     style={[
                       styles.timelineNode,
                       {
                         backgroundColor: isLive ? colors.danger : colors.accent,
-                        borderColor: isLive ? colors.dangerContainer : colors.accentContainer,
+                        borderColor: isLive ? colors.dangerContainer : colors.surfaceAmber,
                       },
                     ]}
                   >
@@ -97,7 +105,7 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                   )}
                 </View>
 
-                {/* Right Class Details Content */}
+                {/* Right Details */}
                 <View style={[styles.detailsCol, { paddingBottom: isLast ? 0 : spacing.lg }]}>
                   {/* Time + Status */}
                   <View style={styles.metaRow}>
@@ -105,7 +113,7 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                       {cls.time}
                     </Text>
                     {isLive && (
-                      <View style={[styles.liveBadge, { backgroundColor: colors.dangerContainer }]}>
+                      <View style={[styles.liveBadge, { backgroundColor: colors.dangerContainer, borderColor: colors.danger }]}>
                         <View style={[styles.liveDot, { backgroundColor: colors.danger }]} />
                         <Text variant="caption" color="danger" weight="700" style={{ fontSize: 10 }}>
                           LIVE
@@ -124,20 +132,20 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
                     {cls.topic}
                   </Text>
 
-                  {/* Faculty & Venue Metadata */}
+                  {/* Faculty & Venue */}
                   <View style={styles.venueRow}>
                     <View style={styles.metaItem}>
-                      <Ionicons name="person-outline" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
-                      <Text variant="caption" color="muted">
+                      <Ionicons name="person-outline" size={11} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                      <Text variant="caption" color="secondary">
                         {cls.teacherName.split('(')[0].trim()}
                       </Text>
                     </View>
                     <Text variant="caption" color="muted" style={{ marginHorizontal: 6 }}>
-                      •
+                      ·
                     </Text>
                     <View style={styles.metaItem}>
-                      <Ionicons name="location-outline" size={12} color={colors.textMuted} style={{ marginRight: 4 }} />
-                      <Text variant="caption" color="muted">
+                      <Ionicons name="location-outline" size={11} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                      <Text variant="caption" color="secondary">
                         {cls.room}
                       </Text>
                     </View>
@@ -148,14 +156,26 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
           })}
         </View>
       ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="calendar-outline" size={24} color={colors.textMuted} style={{ marginBottom: 6 }} />
-          <Text variant="bodySmall" color="secondary" align="center">
-            No classes scheduled today.
-          </Text>
-          <Text variant="caption" color="muted" align="center" style={{ marginTop: 2 }}>
-            Review study materials or practice mock test papers.
-          </Text>
+        /* Compact, intentional empty state */
+        <View
+          style={[
+            styles.emptyScheduleBox,
+            {
+              backgroundColor: colors.surfaceVariant,
+              borderColor: colors.border,
+              borderRadius: borderRadius.md,
+            },
+          ]}
+        >
+          <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} style={{ marginRight: 10 }} />
+          <View style={{ flex: 1 }}>
+            <Text variant="bodySmall" color="primary" weight="700">
+              No classes scheduled today
+            </Text>
+            <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
+              Use this time to review lecture notes or practice test papers.
+            </Text>
+          </View>
         </View>
       )}
     </View>
@@ -172,9 +192,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   divider: {
     height: 1,
@@ -184,7 +205,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   indicatorCol: {
-    width: 24,
+    width: 22,
     alignItems: 'center',
   },
   timelineNode: {
@@ -220,7 +241,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: 8,
+    borderRadius: 6,
+    borderWidth: 1,
     marginLeft: 8,
   },
   liveDot: {
@@ -238,9 +260,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  emptyContainer: {
+  emptyScheduleBox: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
+    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
 });

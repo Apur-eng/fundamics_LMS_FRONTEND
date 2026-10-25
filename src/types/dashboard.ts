@@ -15,21 +15,31 @@ export interface RecentResultItem {
   score: number;
   maxScore: number;
   date: string;
+  hasDocument?: boolean;
+  documentFilename?: string | null;
+  resultId?: string;
+  publishedAt?: string | null;
 }
 
-export type AttendanceDisplayStatus =
-  | 'PRESENT'
-  | 'ABSENT'
-  | 'LATE'
-  | 'EXCUSED'
-  | 'HOLIDAY'
-  | 'OFF';
+export interface ResultDocumentItem {
+  resultId: string;
+  examId: string;
+  examName: string;
+  subjectName?: string;
+  title: string;
+  filename: string;
+  publishedAt?: string | null;
+  examDate?: string;
+  score?: number;
+  maxScore?: number;
+  percentage?: number;
+}
 
 export interface DayAttendanceRecord {
   date: string; // YYYY-MM-DD
   dayNumber: number; // 1-31
   dayOfWeek: number; // 0 (Sun) to 6 (Sat)
-  status: AttendanceDisplayStatus;
+  status: 'PRESENT' | 'ABSENT' | 'OFF' | 'HOLIDAY' | 'LATE' | 'EXCUSED';
   remarks?: string;
 }
 
@@ -70,6 +80,15 @@ export interface NoticeItem {
   isUrgent?: boolean;
 }
 
+export interface StudyResourceItem {
+  id: string;
+  title: string;
+  subject?: string;
+  originalFilename?: string;
+  fileSizeBytes?: number;
+  date?: string;
+}
+
 export interface StudentDashboardData {
   greeting: string;
   academicProfile: {
@@ -90,6 +109,7 @@ export interface StudentDashboardData {
   upcomingClasses: UpcomingClassItem[];
   recentResults: RecentResultItem[];
   notices: NoticeItem[];
+  studyResources?: StudyResourceItem[];
 }
 
 export interface TeacherScheduleItem {

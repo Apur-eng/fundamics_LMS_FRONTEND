@@ -2,7 +2,13 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type AuthStackParamList = {
   Splash: undefined;
-  Login: undefined;
+  Login: { prefillEmail?: string; initialMessage?: string } | undefined;
+  Register: undefined;
+  ApplicationStatus: {
+    email?: string;
+    prefillToken?: string;
+    initialStatus?: 'PENDING_VERIFICATION' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+  } | undefined;
   ForgotPassword: { email?: string } | undefined;
   ResetPassword: { token?: string; email?: string } | undefined;
 };

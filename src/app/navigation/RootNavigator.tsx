@@ -9,12 +9,10 @@ import { useAuth } from '../providers/AuthContext';
 import { useTheme } from '../../theme';
 import { AuthNavigator } from './AuthNavigator';
 import { StudentNavigator } from './StudentNavigator';
-import { TeacherNavigator } from './TeacherNavigator';
-import { AdminNavigator } from './AdminNavigator';
 import { SplashScreen } from '../../features/auth/screens/SplashScreen';
 
 export const RootNavigator: React.FC = () => {
-  const { isAuthenticated, userRole, isHydrating } = useAuth();
+  const { isAuthenticated, isHydrating } = useAuth();
   const { colors, isDark } = useTheme();
 
   const baseTheme = isDark ? DarkTheme : DefaultTheme;
@@ -45,6 +43,8 @@ export const RootNavigator: React.FC = () => {
         ResetPassword: 'reset-password',
         ForgotPassword: 'forgot-password',
         Login: 'login',
+        Register: 'register',
+        ApplicationStatus: 'status',
       },
     },
   };
@@ -55,15 +55,7 @@ export const RootNavigator: React.FC = () => {
 
   return (
     <NavigationContainer theme={navigationTheme} linking={linking}>
-      {!isAuthenticated ? (
-        <AuthNavigator />
-      ) : userRole === 'TEACHER' ? (
-        <TeacherNavigator />
-      ) : userRole === 'ADMIN' ? (
-        <AdminNavigator />
-      ) : (
-        <StudentNavigator />
-      )}
+      {!isAuthenticated ? <AuthNavigator /> : <StudentNavigator />}
     </NavigationContainer>
   );
 };

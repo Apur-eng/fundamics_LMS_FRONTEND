@@ -12,26 +12,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { StudentAcademicHeader } from '../components/StudentAcademicHeader';
-import { AttendanceCalendarPreview } from '../components/AttendanceCalendarPreview';
-import { AcademicExaminationRecord } from '../components/AcademicExaminationRecord';
-import { TodayTimeline } from '../components/TodayTimeline';
-import { CompactNoticesRow } from '../components/CompactNoticesRow';
+import { StudentProfileHeader } from '../components/StudentProfileHeader';
+import { StudentQuickMetrics } from '../components/StudentQuickMetrics';
+import { StudentAcademicOverview } from '../components/StudentAcademicOverview';
+import { StudentAttendanceSummaryCard } from '../components/StudentAttendanceSummaryCard';
+import { StudentPerformanceCard } from '../components/StudentPerformanceCard';
+import { StudentClassesCard } from '../components/StudentClassesCard';
+import { StudentStudyResourcesCard } from '../components/StudentStudyResourcesCard';
+import { StudentNoticesCard } from '../components/StudentNoticesCard';
 import { DashboardSkeleton } from '../components/DashboardSkeleton';
 import { TestResultDetailSheet } from '../../results/components/TestResultDetailSheet';
 import { useStudentDashboard } from '../hooks/useStudentDashboard';
+import { useAuth } from '../../../app/providers/AuthContext';
 import { RecentResultItem } from '../../../types/dashboard';
 
 export const StudentDashboardScreen: React.FC = () => {
   const { colors, spacing } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const { user, logout } = useAuth();
 
   const { data, loading, refreshing, error, refetch, onRefresh } = useStudentDashboard();
 
   // Test inspection modal sheet state
   const [selectedResult, setSelectedResult] = useState<RecentResultItem | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
+
+  // Safe bottom padding so scrollable content is NEVER hidden behind bottom tab bar
+  const bottomContentPadding = Math.max(insets.bottom, 16) + 84;
 
   if (loading && !data) {
     return (
@@ -54,11 +62,11 @@ export const StudentDashboardScreen: React.FC = () => {
   const {
     academicProfile,
     attendance,
-    dayWiseAttendance,
     performanceMetrics,
     upcomingClasses,
     recentResults,
     notices,
+    studyResources,
   } = data;
 
   const handleSelectResult = (item: RecentResultItem) => {
@@ -68,108 +76,148 @@ export const StudentDashboardScreen: React.FC = () => {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* SINGLE NATURAL VERTICAL SCROLL TREE */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.scrollContent,
-          {
-            paddingTop: Math.max(insets.top, 14),
-            paddingHorizontal: spacing.screenPadding,
-            paddingBottom: spacing.massive,
-          },
+          { paddingBottom: bottomContentPadding },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+            tintColor={colors.brandBlue || colors.primary}
+            colors={[colors.brandBlue || colors.primary]}
           />
         }
       >
-        {/* Background Sync Error Banner (Non-destructive) */}
-        {error && (
-          <View
-            style={[
-              styles.syncErrorBanner,
-              {
-                backgroundColor: colors.dangerContainer,
-                borderColor: colors.danger,
-                borderRadius: 6,
-                padding: spacing.sm,
-                marginBottom: spacing.md,
-              },
-            ]}
-          >
-            <Ionicons name="cloud-offline-outline" size={16} color={colors.danger} style={{ marginRight: 6 }} />
-            <Text variant="caption" color="danger" style={{ flex: 1 }}>
-              Sync error: {error}. Presenting offline cached academic records.
-            </Text>
-            <TouchableOpacity onPress={refetch} activeOpacity={0.7} style={{ marginLeft: 6 }}>
-              <Text variant="caption" color="danger" weight="700">
-                Retry
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* 1. COMPACT ACADEMIC GRADIENT HEADER */}
-        <StudentAcademicHeader
-          greeting={data.greeting}
+        {/* 1. BRAND-LED COMPACT NATURAL-SCROLLING NAVY PROFILE HEADER */}
+        <StudentProfileHeader
           studentName={academicProfile.studentName}
+          greeting={data.greeting}
           admissionNumber={academicProfile.admissionNumber}
           classGrade={academicProfile.classGrade}
           board={academicProfile.board}
           branch={academicProfile.branch}
+          avatarUrl={user?.avatarUrl}
+          hasUnreadNotifications={notices && notices.length > 0}
+          onNotificationPress={() => navigation.navigate('StudentNotificationsTab')}
+          onSignOut={logout}
         />
 
-        {/* 2. ATTENDANCE HERO & DAY-WISE MONTHLY CALENDAR (Primary Pillar) */}
-        <AttendanceCalendarPreview
-          overallPercentage={attendance.percentage}
-          presentDays={attendance.presentDays}
-          totalDays={attendance.totalDays}
-          monthlyData={dayWiseAttendance}
-          onViewAll={() => navigation.navigate('StudentAttendance')}
-        />
+        {/* 2. CARD CONTENT CONTAINER */}
+        <View style={[styles.mainCardsSection, { paddingHorizontal: spacing.screenPadding }]}>
+          {/* Background Sync Error Banner (Non-destructive) */}
+          {error && (
+            <View
+              style={[
+                styles.syncErrorBanner,
+                {
+                  backgroundColor: colors.dangerContainer,
+                  borderColor: colors.danger,
+                },
+              ]}
+            >
+              <Ionicons name="cloud-offline-outline" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+              <Text variant="caption" color="danger" style={{ flex: 1 }}>
+                Sync issue: {error}. Presenting cached academic records.
+              </Text>
+              <TouchableOpacity onPress={refetch} activeOpacity={0.7} style={{ marginLeft: 6 }}>
+                <Text variant="caption" color="danger" weight="700">
+                  Retry
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
-        {/* 3. EXAMINATION RECORD & HISTORICAL PERFORMANCE (Second Primary Pillar) */}
-        <AcademicExaminationRecord
-          metrics={performanceMetrics}
-          results={recentResults}
-          onSelectResult={handleSelectResult}
-          onViewAll={() => navigation.navigate('StudentResultsTab')}
-        />
+          {/* Quick Pulse Metrics (Attendance, Test Average, Classes) */}
+          <StudentQuickMetrics
+            attendancePercentage={attendance.percentage}
+            presentDays={attendance.presentDays}
+            totalDays={attendance.totalDays}
+            testAverage={performanceMetrics?.averageScore}
+            deltaTrend={performanceMetrics?.deltaTrend}
+            trendDirection={performanceMetrics?.trendDirection}
+            classesCount={upcomingClasses.length}
+            nextClassTime={upcomingClasses.length > 0 ? upcomingClasses[0].time.split(' - ')[0] : undefined}
+            onAttendancePress={() => navigation.navigate('StudentAttendance')}
+            onPerformancePress={() => navigation.navigate('StudentResultsTab')}
+            onTimetablePress={() => navigation.navigate('StudentClassesTab')}
+          />
 
-        {/* 4. TODAY'S SESSIONS (Secondary Content: Timetable Ledger) */}
-        <TodayTimeline
-          classes={upcomingClasses}
-          onClassPress={() => navigation.navigate('StudentClassesTab')}
-        />
+          {/* Academic Overview: Programme & Enrollment Details */}
+          <StudentAcademicOverview
+            classGrade={academicProfile.classGrade}
+            board={academicProfile.board}
+            admissionNumber={academicProfile.admissionNumber}
+            branch={academicProfile.branch}
+          />
 
-        {/* 5. OFFICIAL CIRCULARS & NOTICES (Secondary Content: Minimal Row) */}
-        <CompactNoticesRow
-          notices={notices}
-          onViewAll={() => navigation.navigate('StudentNotificationsTab')}
-          onNoticePress={() => navigation.navigate('StudentNotificationsTab')}
-        />
+          {/* Attendance Summary Card (Green accent, compliant status) */}
+          <StudentAttendanceSummaryCard
+            percentage={attendance.percentage}
+            presentDays={attendance.presentDays}
+            totalDays={attendance.totalDays}
+            status={attendance.status}
+            onViewDetails={() => navigation.navigate('StudentAttendance')}
+          />
+
+          {/* Test Performance Card (Blue & Gold accents) */}
+          <StudentPerformanceCard
+            metrics={performanceMetrics}
+            results={recentResults}
+            onSelectResult={handleSelectResult}
+            onViewAll={() => navigation.navigate('StudentResultsTab')}
+          />
+
+          {/* Today's Timetable & Classes (Green accent) */}
+          <StudentClassesCard
+            classes={upcomingClasses}
+            onViewAll={() => navigation.navigate('StudentClassesTab')}
+          />
+
+          {/* Study Resources / Notes (Brand blue accent) */}
+          <StudentStudyResourcesCard
+            resources={studyResources}
+            onViewAll={() => navigation.navigate('StudentClassesTab')}
+          />
+
+          {/* Official Notices & Circulars (Warm accent) */}
+          <StudentNoticesCard
+            notices={notices}
+            onViewAll={() => navigation.navigate('StudentNotificationsTab')}
+          />
+        </View>
       </ScrollView>
 
-      {/* Test Result Inspection Detail Sheet */}
+      {/* Test Result Inspection Bottom Sheet */}
       <TestResultDetailSheet
         visible={detailVisible}
-        onClose={() => setDetailVisible(false)}
         result={selectedResult}
+        onClose={() => {
+          setDetailVisible(false);
+          setSelectedResult(null);
+        }}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContent: {},
+  scrollContent: {
+    flexGrow: 1,
+  },
+  mainCardsSection: {
+    paddingTop: 14,
+  },
   syncErrorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
     borderWidth: 1,
+    marginBottom: 12,
   },
 });

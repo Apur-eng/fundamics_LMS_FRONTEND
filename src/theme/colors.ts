@@ -132,86 +132,120 @@ export interface ColorTheme {
 
   overlay: string;
 
-  // Dedicated Academic Tokens
-  academicGold: string;
-  academicGoldContainer: string;
+  // Dedicated Official Brand & Feature Accent Tokens
+  navy: string;
+  navyDeep: string;
+  brandBlue: string;
+  brandGreen: string;
+  warmGold: string;
+  primaryBlue: string;
   emerald: string;
   emeraldContainer: string;
+  violet: string;
+  violetContainer: string;
+  skyBlue: string;
+  skyBlueContainer: string;
+  amber: string;
+  amberContainer: string;
+  coral: string;
+  coralContainer: string;
+  navyContainer: string;
+
+  surfaceMint: string;
+  surfaceAmber: string;
+
+  academicGold: string;
+  academicGoldContainer: string;
   navyPrimary: string;
-  navyDeep: string;
   navyElevated: string;
   divider: string;
 }
 
 export const lightThemeColors: ColorTheme = {
-  // Academic Blue — institutional primary brand
-  primary: brandPalette.academicBlue800,       // #075B86 deep academic blue
-  primaryLight: brandPalette.academicBlue700,  // #087BAF vivid blue
-  primaryDark: brandPalette.academicBlue900,   // #044269 darkest
-  primaryContainer: brandPalette.academicBlue50, // #E8F6FC pale-blue panel
-  onPrimary: brandPalette.white,
+  // Official Fundamics Brand Palette
+  primary: '#12365A',                        // Primary navy
+  primaryLight: '#3478B8',                   // Brand blue
+  primaryDark: '#0B2948',                    // Deep navy
+  primaryContainer: '#EAF0F6',               // Soft navy container
+  onPrimary: '#FFFFFF',
 
-  // Vivid institutional blue — CTAs, links, active icons
-  accent: brandPalette.academicBlue700,        // #087BAF
-  accentLight: brandPalette.academicBlue600,   // #1A94CC
-  accentDark: brandPalette.academicBlue800,    // #075B86
-  accentContainer: brandPalette.academicBlue50, // #E8F6FC
-  onAccent: brandPalette.white,
+  // Brand blue — CTAs, links, active icons
+  accent: '#3478B8',                         // Brand blue
+  accentLight: '#4A8EC9',
+  accentDark: '#12365A',
+  accentContainer: 'rgba(52, 120, 184, 0.08)',
+  onAccent: '#FFFFFF',
 
-  // Academic gold — distinction badges, merit
-  distinction: brandPalette.academicGold,      // #C69A45
-  distinctionContainer: brandPalette.gold50,   // #FFFBEB
-  onDistinction: brandPalette.gold800,         // #92400E
+  // Warm gold — distinction badges, merit
+  distinction: '#F2C94C',
+  distinctionContainer: 'rgba(242, 201, 76, 0.12)',
+  onDistinction: '#8F6218',
 
   // Page & surface hierarchy
-  background: brandPalette.academicBlue25,     // #F5F9FC pale page background
-  surface: brandPalette.white,                 // #FFFFFF card surface
-  surfaceElevated: brandPalette.white,         // #FFFFFF elevated card
-  surfaceVariant: brandPalette.academicBlue50, // #E8F6FC section panels
+  background: '#FAFAF7',                     // Main background (warm white / ivory)
+  surface: '#FFFFFF',                        // Pure white card surface
+  surfaceElevated: '#FFFFFF',
+  surfaceVariant: '#F3F5F8',
 
-  // Structural borders — soft blue-grey
-  border: '#E4EBF0',
-  borderLight: '#EEF4F8',
-  borderFocus: brandPalette.academicBlue700,   // #087BAF
+  // Structural borders
+  border: '#E7EAF0',                         // Border
+  borderLight: '#F0F3F7',
+  borderFocus: '#12365A',
 
-  // Typography — deep blue-grey on white
-  textPrimary: '#172B3D',                      // deep academic blue-black
-  textSecondary: '#6B7D8D',                    // medium blue-grey
-  textMuted: '#A0B0BC',                        // light muted
-  textInverse: brandPalette.white,
-  textInverseMuted: brandPalette.academicBlue100,
+  // Typography
+  textPrimary: '#1E293B',                    // Primary text
+  textSecondary: '#64748B',                  // Secondary text
+  textMuted: '#94A3B8',
+  textInverse: '#FFFFFF',
+  textInverseMuted: '#CBD5E1',
 
-  // Attendance present — restrained green
-  success: brandPalette.green700,              // #15966A
-  successContainer: brandPalette.green50,      // #E7F7EF
-  onSuccess: brandPalette.green800,            // #0F6B4A
+  // Semantics
+  success: '#16845B',                        // Success (present attendance)
+  successContainer: 'rgba(22, 132, 91, 0.08)',
+  onSuccess: '#0F5B3F',
 
-  // Warning — academic gold
-  warning: brandPalette.academicGold,          // #C69A45
-  warningContainer: brandPalette.gold50,       // #FFFBEB
-  onWarning: brandPalette.gold800,
+  warning: '#D99A24',                        // Warning (warm gold / amber)
+  warningContainer: 'rgba(217, 154, 36, 0.08)',
+  onWarning: '#92400E',
 
-  // Attendance absent — soft red
-  danger: brandPalette.red600,                 // #D94F55
-  dangerContainer: brandPalette.red50,         // #FDECEE
-  onDanger: brandPalette.red700,               // #B93040
+  danger: '#D94848',                         // Error (absent attendance)
+  dangerContainer: 'rgba(217, 72, 72, 0.08)',
+  onDanger: '#9E2A27',
 
-  // Info — uses the primary blue family
-  info: brandPalette.academicBlue700,          // #087BAF
-  infoContainer: brandPalette.academicBlue50,  // #E8F6FC
-  onInfo: brandPalette.academicBlue800,        // #075B86
+  info: '#3478B8',                           // Brand blue
+  infoContainer: 'rgba(52, 120, 184, 0.08)',
+  onInfo: '#12365A',
 
-  overlay: 'rgba(7, 91, 134, 0.15)',
+  overlay: 'rgba(11, 41, 72, 0.35)',
 
-  // Dedicated Academic Tokens (light theme)
-  academicGold: brandPalette.academicGold,             // #C69A45
-  academicGoldContainer: 'rgba(198, 154, 69, 0.12)',
-  emerald: brandPalette.green700,                      // #15966A (used by Text color="emerald")
-  emeraldContainer: brandPalette.green50,              // #E7F7EF
-  navyPrimary: brandPalette.academicBlue700,           // #087BAF — used as primary nav/brand
-  navyDeep: brandPalette.academicBlue800,              // #075B86
-  navyElevated: brandPalette.academicBlue50,           // #E8F6FC
-  divider: '#E4EBF0',
+  // Official Brand Tokens
+  navy: '#12365A',
+  navyDeep: '#0B2948',
+  brandBlue: '#3478B8',
+  brandGreen: '#76A843',
+  warmGold: '#F2C94C',
+
+  // Feature Accent Tokens
+  primaryBlue: '#3478B8',
+  emerald: '#16845B',
+  emeraldContainer: 'rgba(22, 132, 91, 0.08)',
+  violet: '#7657C8',
+  violetContainer: 'rgba(118, 87, 200, 0.08)',
+  skyBlue: '#3478B8',
+  skyBlueContainer: 'rgba(52, 120, 184, 0.08)',
+  amber: '#D99A24',
+  amberContainer: 'rgba(217, 154, 36, 0.08)',
+  coral: '#D94848',
+  coralContainer: 'rgba(217, 72, 72, 0.08)',
+  navyContainer: 'rgba(18, 54, 90, 0.08)',
+  surfaceMint: 'rgba(22, 132, 91, 0.08)',
+  surfaceAmber: 'rgba(242, 201, 76, 0.12)',
+
+  academicGold: '#F2C94C',
+  academicGoldContainer: 'rgba(242, 201, 76, 0.12)',
+  navyPrimary: '#12365A',
+  navyElevated: '#1A436D',
+  divider: '#E7EAF0',
 };
 
 export const darkThemeColors: ColorTheme = {
@@ -253,12 +287,12 @@ export const darkThemeColors: ColorTheme = {
   textInverseMuted: '#A6B2C7',
 
   // Semantics
-  success: '#38C995',
-  successContainer: 'rgba(56, 201, 149, 0.15)',
+  success: '#15966A',
+  successContainer: 'rgba(21, 150, 106, 0.15)',
   onSuccess: '#D1FAE5',
 
-  warning: '#D6B46A',
-  warningContainer: 'rgba(214, 180, 106, 0.15)',
+  warning: '#D99A2B',
+  warningContainer: 'rgba(217, 154, 43, 0.15)',
   onWarning: '#FEF3C7',
 
   danger: '#F07878', // Absent / Warning state
@@ -271,13 +305,32 @@ export const darkThemeColors: ColorTheme = {
 
   overlay: 'rgba(11, 18, 32, 0.8)',
 
+  // Official Brand Tokens (dark theme)
+  navy: '#12365A',
+  navyDeep: '#0B2948',
+  brandBlue: '#3478B8',
+  brandGreen: '#76A843',
+  warmGold: '#F2C94C',
+
+  primaryBlue: '#3478B8',
+  emerald: '#15966A',
+  emeraldContainer: 'rgba(21, 150, 106, 0.16)',
+  violet: '#8E70DE',
+  violetContainer: 'rgba(142, 112, 222, 0.16)',
+  skyBlue: '#4E9AF2',
+  skyBlueContainer: 'rgba(78, 154, 242, 0.16)',
+  amber: '#D99A2B',
+  amberContainer: 'rgba(217, 154, 43, 0.16)',
+  coral: '#D96961',
+  coralContainer: 'rgba(217, 105, 97, 0.16)',
+  navyContainer: 'rgba(20, 43, 74, 0.25)',
+  surfaceMint: 'rgba(56, 201, 149, 0.14)',
+  surfaceAmber: 'rgba(214, 180, 106, 0.14)',
+
   // Dedicated Academic Tokens
   academicGold: '#D6B46A',
   academicGoldContainer: 'rgba(214, 180, 106, 0.14)',
-  emerald: '#38C995',
-  emeraldContainer: 'rgba(56, 201, 149, 0.14)',
   navyPrimary: '#101D38',
-  navyDeep: '#0B1220',
   navyElevated: '#141F32',
   divider: '#29354A',
 };

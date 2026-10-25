@@ -12,3 +12,13 @@ export * from './components/TodayTimeline';
 export * from './components/RecentResultsList';
 export * from './components/CompactNoticesRow';
 export * from './components/DashboardSkeleton';
+export * from './components/StudentCollapsingHeader';
+export * from './components/StudentAcademicOverview';
+export * from './components/StudentAttendanceSummaryCard';
+export * from './components/StudentPerformanceCard';
+export * from './components/StudentClassesCard';
+export * from './components/StudentStudyResourcesCard';
+export * from './components/StudentNoticesCard';
+export * from './components/StudentQuickMetrics';
+
+export * from './components/StudentProfileHeader';

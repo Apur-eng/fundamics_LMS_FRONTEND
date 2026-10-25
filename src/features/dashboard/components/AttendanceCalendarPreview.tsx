@@ -25,36 +25,16 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
   const absentDays = Math.max(0, totalDays - presentDays);
   const hasAttendanceData = totalDays > 0;
   const isCompliant = hasAttendanceData && overallPercentage >= 75;
-  const isExemplary = hasAttendanceData && overallPercentage >= 90;
-
-  const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const records = monthlyData?.records || [];
-
-  // Derive month's first day of week directly from monthlyData.monthKey ("YYYY-MM") or current date
-  const leadEmptySlots = (() => {
-    if (monthlyData?.monthKey) {
-      const [y, m] = monthlyData.monthKey.split('-').map(Number);
-      if (!isNaN(y) && !isNaN(m)) {
-        const firstDayOfMonth = new Date(y, m - 1, 1);
-        const sunDay = firstDayOfMonth.getDay();
-        return sunDay === 0 ? 6 : sunDay - 1;
-      }
-    }
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const sunDay = firstDayOfMonth.getDay();
-    return sunDay === 0 ? 6 : sunDay - 1;
-  })();
 
   const progressPct = Math.max(0, Math.min(100, overallPercentage));
 
-  // Status colors — light palette
-  const presentBg = '#E7F7EF';
-  const presentBorder = '#A8DFC8';
-  const presentText = '#0F6B4A';
-  const absentBg = '#FDECEE';
-  const absentBorder = '#F0B4B8';
-  const absentText = '#B93040';
+  // Determine fill color: Emerald if compliant, amber if borderline, red if critical
+  const getProgressColor = () => {
+    if (!hasAttendanceData) return colors.textMuted;
+    if (overallPercentage >= 75) return colors.emerald;
+    if (overallPercentage >= 65) return colors.accent;
+    return colors.danger;
+  };
 
   return (
     <View
@@ -65,347 +45,200 @@ export const AttendanceCalendarPreview: React.FC<AttendanceCalendarPreviewProps>
           backgroundColor: colors.surface,
           borderColor: colors.border,
           borderRadius: borderRadius.lg,
+          padding: spacing.cardPadding,
           marginBottom: spacing.lg,
-          overflow: 'hidden',
         },
       ]}
     >
-      {/* Section header with pale-blue accent band */}
-      <View
-        style={[
-          styles.sectionHeader,
-          {
-            backgroundColor: colors.surfaceVariant,
-            borderBottomColor: colors.border,
-            paddingHorizontal: spacing.cardPadding,
-            paddingVertical: 10,
-          },
-        ]}
-      >
+      {/* 1. Clean Unboxed Section Header */}
+      <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderLeft}>
-          <Text
-            variant="academicLabel"
-            color="primary"
-            style={styles.sectionTitle}
-          >
-            Attendance Record
+          <Text variant="academicLabel" color="primary" style={styles.sectionTitle}>
+            ATTENDANCE SUMMARY
           </Text>
-          <Text variant="caption" color="muted" style={{ marginTop: 1 }}>
-            Day-wise register · 2026–27
+          <Text variant="caption" color="secondary" style={{ marginTop: 1 }}>
+            Lecture & practical compliance register
           </Text>
         </View>
+
         {onViewAll && (
           <TouchableOpacity
             onPress={onViewAll}
             activeOpacity={0.7}
             style={[
-              styles.viewAllBtn,
+              styles.registerBtn,
               {
-                backgroundColor: colors.primary,
-                borderRadius: borderRadius.sm,
+                backgroundColor: colors.surfaceVariant,
+                borderColor: colors.border,
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="View full attendance ledger"
+            accessibilityLabel="Open attendance register"
           >
-            <Text style={styles.viewAllText} color="inverse" weight="700">
-              Ledger
+            <Text variant="buttonSmall" color="secondary" weight="600">
+              Register
             </Text>
-            <Ionicons name="arrow-forward" size={11} color={colors.textInverse} style={{ marginLeft: 3 }} />
+            <Ionicons name="arrow-forward" size={12} color={colors.textSecondary} style={{ marginLeft: 3 }} />
           </TouchableOpacity>
         )}
       </View>
 
-      <View style={{ paddingHorizontal: spacing.cardPadding, paddingTop: spacing.md }}>
-        {/* 2. Attendance Hero: Percentage + Figures */}
-        <View style={styles.heroRow}>
-          {/* Left: Large percentage */}
-          <View style={styles.percentageCol}>
-            <Text
-              variant="metricHero"
-              color="primary"
-              weight="700"
-              style={styles.percentageNum}
-            >
-              {hasAttendanceData ? `${overallPercentage}%` : '—'}
-            </Text>
-            {/* Status badge */}
-            <View
-              style={[
-                styles.statusBadge,
-                {
-                  backgroundColor: !hasAttendanceData
-                    ? colors.surfaceVariant
-                    : isExemplary
-                    ? '#E7F7EF'
-                    : isCompliant
-                    ? '#FFFBEB'
-                    : '#FDECEE',
-                  borderColor: !hasAttendanceData
-                    ? colors.border
-                    : isExemplary
-                    ? '#A8DFC8'
-                    : isCompliant
-                    ? '#E9D89A'
-                    : '#F0B4B8',
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor: !hasAttendanceData
-                      ? colors.textMuted
-                      : isExemplary
-                      ? '#15966A'
-                      : isCompliant
-                      ? '#C69A45'
-                      : '#D94F55',
-                  },
-                ]}
-              />
-              <Text
-                style={styles.statusText}
-                color={!hasAttendanceData ? 'muted' : isExemplary ? 'emerald' : isCompliant ? 'distinction' : 'danger'}
-                weight="700"
-              >
-                {!hasAttendanceData ? 'NO RECORDS' : isExemplary ? 'EXEMPLARY' : isCompliant ? 'CRITERIA MET' : 'CRITICAL'}
-              </Text>
-            </View>
-          </View>
+      {/* Subtle Divider */}
+      <View style={[styles.divider, { backgroundColor: colors.borderLight, marginVertical: spacing.md }]} />
 
-          {/* Right: Aligned stat figures */}
-          <View style={[styles.figuresRow, { borderColor: colors.borderLight }]}>
-            <View style={styles.figureItem}>
-              <Text variant="h3" weight="700" style={{ color: '#15966A' }}>
-                {presentDays}
-              </Text>
-              <Text variant="caption" color="muted" style={styles.figureLabel}>
-                Present
-              </Text>
-            </View>
-            <View style={[styles.figureDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.figureItem}>
-              <Text
-                variant="h3"
-                weight="700"
-                style={{ color: absentDays > 0 ? '#D94F55' : colors.textMuted }}
-              >
-                {absentDays}
-              </Text>
-              <Text variant="caption" color="muted" style={styles.figureLabel}>
-                Absent
-              </Text>
-            </View>
-            <View style={[styles.figureDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.figureItem}>
-              <Text variant="h3" color="primary" weight="700">
-                {totalDays}
-              </Text>
-              <Text variant="caption" color="muted" style={styles.figureLabel}>
-                Total
-              </Text>
-            </View>
-          </View>
-        </View>
+      {/* 2. Hero Metric Row */}
+      <View style={styles.heroRow}>
+        {/* Main Metric & Status Badge */}
+        <View style={styles.percentageCol}>
+          <Text
+            variant="metricHero"
+            color="primary"
+            weight="700"
+            style={styles.percentageNum}
+          >
+            {hasAttendanceData ? `${overallPercentage}%` : '—'}
+          </Text>
 
-        {/* Progress bar with 75% statutory marker */}
-        <View style={[styles.progressWrap, { marginTop: spacing.md }]}>
+          {/* Compliance Badge */}
           <View
             style={[
-              styles.progressTrack,
-              { backgroundColor: colors.surfaceVariant, borderColor: colors.border },
+              styles.statusBadge,
+              {
+                backgroundColor: isCompliant
+                  ? colors.surfaceMint
+                  : hasAttendanceData
+                  ? colors.dangerContainer
+                  : colors.surfaceVariant,
+                borderColor: isCompliant
+                  ? colors.emerald
+                  : hasAttendanceData
+                  ? colors.danger
+                  : colors.border,
+              },
             ]}
           >
             <View
               style={[
-                styles.progressFill,
+                styles.statusDot,
                 {
-                  width: `${progressPct}%`,
-                  backgroundColor: isExemplary
-                    ? '#15966A'
-                    : isCompliant
-                    ? '#087BAF'
-                    : '#D94F55',
+                  backgroundColor: isCompliant
+                    ? colors.emerald
+                    : hasAttendanceData
+                    ? colors.danger
+                    : colors.textMuted,
                 },
               ]}
             />
-            {/* 75% threshold marker */}
-            <View
-              style={[
-                styles.thresholdMarker,
-                { left: '75%', backgroundColor: '#C69A45' },
-              ]}
-            />
-          </View>
-          <View style={styles.progressLabels}>
-            <Text variant="caption" color="muted" style={{ fontSize: 9 }}>0%</Text>
-            <View style={styles.thresholdLabel}>
-              <View style={[styles.thresholdDot, { backgroundColor: '#C69A45' }]} />
-              <Text variant="caption" color="distinction" weight="600" style={{ fontSize: 9 }}>
-                75% req.
-              </Text>
-            </View>
-            <Text variant="caption" color="muted" style={{ fontSize: 9 }}>100%</Text>
-          </View>
-        </View>
-
-        {/* Divider */}
-        <View style={[styles.divider, { backgroundColor: colors.borderLight, marginVertical: spacing.md }]} />
-
-        {/* 3. Day-Wise Calendar */}
-        <View style={styles.calendarHeaderRow}>
-          <View style={styles.monthTitleWrap}>
-            <Text variant="academicLabel" color="primary" style={styles.monthTitle}>
-              {monthlyData?.monthName?.toUpperCase() || 'CURRENT MONTH'}
+            <Text
+              style={styles.statusText}
+              color={isCompliant ? 'emerald' : hasAttendanceData ? 'danger' : 'secondary'}
+              weight="700"
+            >
+              {isCompliant
+                ? 'COMPLIANT (≥75%)'
+                : hasAttendanceData
+                ? 'BELOW 75% REQ.'
+                : 'NO LOGS RECORDED'}
             </Text>
           </View>
-          {monthlyData && (
-            <View style={styles.monthTally}>
-              <Text variant="caption" style={{ color: '#15966A' }} weight="700">
-                {monthlyData.presentDays}P
-              </Text>
-              <Text variant="caption" color="muted" style={{ marginHorizontal: 4 }}>·</Text>
-              <Text variant="caption" style={{ color: '#D94F55' }} weight="700">
-                {monthlyData.absentDays}A
-              </Text>
-              <Text variant="caption" color="muted" style={{ marginHorizontal: 4 }}>·</Text>
-              <Text variant="caption" color="muted" weight="600">
-                {records.filter((r) => r.status === 'OFF' || r.status === 'HOLIDAY').length} Off
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* Weekday column headers */}
-        <View style={[styles.weekRow, { borderBottomColor: colors.border }]}>
-          {weekDays.map((day, idx) => (
-            <View key={`${day}-${idx}`} style={styles.weekCol}>
-              <Text
-                variant="caption"
-                color="muted"
-                align="center"
-                weight="700"
-                style={styles.weekDayText}
-              >
-                {day}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Calendar grid */}
-        {records.length > 0 ? (
-          <View style={styles.calendarGrid}>
-            {Array.from({ length: leadEmptySlots }).map((_, idx) => (
-              <View key={`lead-${idx}`} style={styles.dayCell}>
-                <View style={[styles.dayCellInner, { backgroundColor: 'transparent', borderColor: 'transparent' }]} />
-              </View>
-            ))}
-
-            {records.map((rec) => {
-              const isPresent = rec.status === 'PRESENT';
-              const isAbsent = rec.status === 'ABSENT';
-              const isLate = rec.status === 'LATE';
-              const isExcused = rec.status === 'EXCUSED';
-              const isOff = rec.status === 'HOLIDAY' || rec.status === 'OFF';
-
-              return (
-                <View key={rec.date} style={styles.dayCell}>
-                  <View
-                    style={[
-                      styles.dayCellInner,
-                      isPresent && {
-                        backgroundColor: presentBg,
-                        borderColor: presentBorder,
-                      },
-                      isAbsent && {
-                        backgroundColor: absentBg,
-                        borderColor: absentBorder,
-                      },
-                      isLate && {
-                        backgroundColor: '#FFFBEB',
-                        borderColor: '#E9D89A',
-                      },
-                      isExcused && {
-                        backgroundColor: '#F0F4FA',
-                        borderColor: '#C8D6EC',
-                      },
-                      isOff && {
-                        backgroundColor: colors.surfaceVariant,
-                        borderColor: colors.borderLight,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.dayNumber,
-                        {
-                          color: isAbsent
-                            ? absentText
-                            : isPresent
-                            ? presentText
-                            : isLate
-                            ? '#926300'
-                            : isExcused
-                            ? '#1B4D89'
-                            : colors.textMuted,
-                          fontWeight: isAbsent || isPresent ? '700' : '500',
-                        },
-                      ]}
-                    >
-                      {rec.dayNumber}
-                    </Text>
-                    <View style={styles.dayStatusIcon}>
-                      {isPresent && (
-                        <Ionicons name="checkmark" size={8} color={presentText} />
-                      )}
-                      {isAbsent && (
-                        <Ionicons name="close" size={8} color={absentText} />
-                      )}
-                      {isLate && (
-                        <Ionicons name="time-outline" size={8} color="#926300" />
-                      )}
-                      {isExcused && (
-                        <Ionicons name="document-text-outline" size={8} color="#1B4D89" />
-                      )}
-                      {isOff && (
-                        <View style={[styles.offDash, { backgroundColor: colors.textMuted }]} />
-                      )}
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.emptyCalendar}>
-            <Text variant="caption" color="muted" align="center">
-              No attendance records logged for this month
+        {/* Figures (Present, Absent, Total) */}
+        <View style={[styles.figuresRow, { borderLeftColor: colors.borderLight }]}>
+          <View style={styles.figureItem}>
+            <Text
+              variant="h3"
+              color={presentDays > 0 ? 'emerald' : 'primary'}
+              weight="700"
+            >
+              {presentDays}
+            </Text>
+            <Text variant="caption" color="secondary" style={styles.figureLabel}>
+              Present
             </Text>
           </View>
-        )}
 
-        {/* Legend */}
-        <View style={[styles.legend, { borderTopColor: colors.borderLight, marginTop: 10, paddingTop: spacing.sm }]}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#15966A' }]} />
-            <Text variant="caption" color="secondary" style={styles.legendText}>Present</Text>
+          <View style={[styles.figureDivider, { backgroundColor: colors.borderLight }]} />
+
+          <View style={styles.figureItem}>
+            <Text
+              variant="h3"
+              color={absentDays > 0 ? 'danger' : 'secondary'}
+              weight="700"
+            >
+              {absentDays}
+            </Text>
+            <Text variant="caption" color="secondary" style={styles.figureLabel}>
+              Absent
+            </Text>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#D94F55' }]} />
-            <Text variant="caption" color="secondary" style={styles.legendText}>Absent</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#D1DDE6', borderWidth: 1, borderColor: '#C4D0DA' }]} />
-            <Text variant="caption" color="muted" style={styles.legendText}>No Class</Text>
+
+          <View style={[styles.figureDivider, { backgroundColor: colors.borderLight }]} />
+
+          <View style={styles.figureItem}>
+            <Text variant="h3" color="primary" weight="700">
+              {totalDays}
+            </Text>
+            <Text variant="caption" color="secondary" style={styles.figureLabel}>
+              Working
+            </Text>
           </View>
         </View>
       </View>
 
-      {/* Bottom padding */}
-      <View style={{ height: spacing.md }} />
+      {/* 3. Compliance Progress Bar */}
+      <View style={[styles.progressWrap, { marginTop: spacing.md }]}>
+        <View style={[styles.progressTrack, { backgroundColor: colors.surfaceVariant, borderColor: colors.borderLight }]}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${progressPct}%`,
+                backgroundColor: getProgressColor(),
+              },
+            ]}
+          />
+          {/* 75% threshold guide line */}
+          <View
+            style={[
+              styles.thresholdMarker,
+              { left: '75%', backgroundColor: colors.accent },
+            ]}
+          />
+        </View>
+
+        <View style={styles.progressLabels}>
+          <Text variant="caption" color="muted" style={{ fontSize: 9 }}>
+            0%
+          </Text>
+          <View style={styles.thresholdLabel}>
+            <View style={[styles.thresholdDot, { backgroundColor: colors.accent }]} />
+            <Text variant="caption" color="secondary" weight="600" style={{ fontSize: 9 }}>
+              75% min. requirement
+            </Text>
+          </View>
+          <Text variant="caption" color="muted" style={{ fontSize: 9 }}>
+            100%
+          </Text>
+        </View>
+      </View>
+
+      {/* 4. Compact Context & Direct Link to Full Calendar */}
+      {onViewAll && (
+        <TouchableOpacity
+          onPress={onViewAll}
+          activeOpacity={0.7}
+          style={[styles.calendarFooterLink, { borderTopColor: colors.borderLight, marginTop: spacing.md, paddingTop: spacing.sm }]}
+          accessibilityRole="button"
+          accessibilityLabel="Open attendance register with full calendar"
+        >
+          <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+          <Text variant="caption" color="secondary" weight="600" style={{ flex: 1 }}>
+            View day-by-day calendar & monthly register
+          </Text>
+          <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -418,7 +251,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
   },
   sectionHeaderLeft: {
     flex: 1,
@@ -428,15 +260,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 0.8,
   },
-  viewAllBtn: {
+  registerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
   },
-  viewAllText: {
-    fontSize: 11,
-    letterSpacing: 0.2,
+  divider: {
+    height: 1,
   },
   heroRow: {
     flexDirection: 'row',
@@ -445,7 +278,7 @@ const styles = StyleSheet.create({
   },
   percentageCol: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 10,
   },
   percentageNum: {
     letterSpacing: -1,
@@ -455,28 +288,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderWidth: 1,
-    paddingHorizontal: 7,
+    paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 5,
-    marginTop: 6,
+    marginTop: 4,
   },
   statusDot: {
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    marginRight: 5,
+    marginRight: 4,
   },
   statusText: {
     fontSize: 9,
-    letterSpacing: 0.7,
+    letterSpacing: 0.5,
   },
   figuresRow: {
-    flex: 1.3,
+    flex: 1.4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     borderLeftWidth: 1,
-    paddingLeft: 12,
+    paddingLeft: 10,
   },
   figureItem: {
     alignItems: 'center',
@@ -526,97 +359,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginRight: 3,
   },
-  divider: {
-    height: 1,
-  },
-  calendarHeaderRow: {
+  calendarFooterLink: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  monthTitleWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  monthTitle: {
-    fontSize: 10,
-    letterSpacing: 0.8,
-  },
-  monthTally: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  weekRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    paddingBottom: 5,
-    marginBottom: 5,
-  },
-  weekCol: {
-    width: '14.285%',
-    alignItems: 'center',
-  },
-  weekDayText: {
-    fontSize: 9,
-    letterSpacing: 0.3,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  dayCell: {
-    width: '14.285%',
-    alignItems: 'center',
-    marginVertical: 2,
-    paddingHorizontal: 1.5,
-  },
-  dayCellInner: {
-    width: '100%',
-    aspectRatio: 1,
-    maxWidth: 36,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 1,
-  },
-  dayNumber: {
-    fontSize: 10,
-    lineHeight: 12,
-  },
-  dayStatusIcon: {
-    height: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  offDash: {
-    width: 6,
-    height: 1,
-    opacity: 0.5,
-  },
-  emptyCalendar: {
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
     borderTopWidth: 1,
-    gap: 18,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginRight: 4,
-  },
-  legendText: {
-    fontSize: 10,
   },
 });

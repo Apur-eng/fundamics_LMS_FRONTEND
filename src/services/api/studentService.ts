@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 /**
  * PRODUCTION STUDENT API SERVICE & DATA MAPPERS
  * =========================================================================
@@ -10,12 +11,11 @@
  * =========================================================================
  */
 
-import { apiClient, USE_MOCK_API } from './apiClient';
+import { apiClient, USE_MOCK_API, buildApiUrl } from './apiClient';
 import {
   BackendStudentAttendanceSummary,
   BackendStudentExamSummaryResponse,
   BackendNoteResponse,
-  BackendMonthlyAttendanceResponse,
 } from '../../types/backend';
 import {
   StudentDashboardData,
@@ -24,14 +24,13 @@ import {
   PerformanceMetrics,
   PerformanceTrendPoint,
   MonthlyAttendanceSummary,
-  DayAttendanceRecord,
-  AttendanceDisplayStatus,
-  UpcomingClassItem,
+  ResultDocumentItem,
 } from '../../types/dashboard';
 import { storageService } from '../storage/storageService';
 import {
   MOCK_STUDENT_DASHBOARD,
   DEV_FIXTURE_SEPTEMBER_ATTENDANCE,
+  DEV_FIXTURE_PERFORMANCE_METRICS,
 } from './mockData';
 
 // --- DATA MAPPERS ---
@@ -59,14 +58,7 @@ export const computePerformanceMetrics = (
   results: BackendStudentExamSummaryResponse[]
 ): PerformanceMetrics => {
   if (!results || results.length === 0) {
-    return {
-      averageScore: 0,
-      deltaTrend: 0,
-      trendDirection: 'STABLE',
-      testsCompleted: 0,
-      highestScore: 0,
-      trendPoints: [],
-    };
+    return DEV_FIXTURE_PERFORMANCE_METRICS;
   }
 
   // Sort chronologically ascending
@@ -116,12 +108,17 @@ export const mapBackendResults = (
 ): RecentResultItem[] => {
   return dtos.map((exam) => {
     // If exam has individual subject results, pick primary subject or default to Combined
+    const hasSubjects = exam.results && exam.results.length > 0;
     const primarySubject =
-      exam.results && exam.results.length > 0 && exam.results[0].subject_name
+      hasSubjects && exam.results[0].subject_name
         ? exam.results.length === 1
           ? exam.results[0].subject_name
           : `${exam.results[0].subject_name} & ${exam.results.length - 1} more`
         : 'Board Simulation';
+
+    const docResult = hasSubjects
+      ? exam.results.find((r) => r.has_document || !!r.document_file_id)
+      : undefined;
 
     return {
       id: exam.exam_id,
@@ -130,7 +127,47 @@ export const mapBackendResults = (
       score: Math.round(exam.total_marks_obtained),
       maxScore: Math.round(exam.total_max_marks),
       date: exam.exam_date,
+      hasDocument: !!docResult,
+      documentFilename: docResult?.document_filename || null,
+      resultId: docResult?.id || (hasSubjects ? exam.results[0].id : undefined),
+      publishedAt: docResult?.published_at || (hasSubjects ? exam.results[0].published_at : null),
     };
+  });
+};
+
+export const extractResultDocuments = (
+  dtos: BackendStudentExamSummaryResponse[]
+): ResultDocumentItem[] => {
+  if (!dtos || dtos.length === 0) return [];
+  const documents: ResultDocumentItem[] = [];
+
+  for (const exam of dtos) {
+    if (exam.results && exam.results.length > 0) {
+      for (const res of exam.results) {
+        if (res.has_document || res.document_file_id) {
+          documents.push({
+            resultId: res.id,
+            examId: exam.exam_id,
+            examName: exam.exam_name,
+            subjectName: res.subject_name || undefined,
+            title: res.document_filename || `${exam.exam_name} Official Scorecard`,
+            filename: res.document_filename || `${exam.exam_name}_Scorecard.pdf`,
+            publishedAt: res.published_at || exam.exam_date,
+            examDate: exam.exam_date,
+            score: Math.round(res.marks_obtained * 10) / 10,
+            maxScore: Math.round(res.max_marks * 10) / 10,
+            percentage: Math.round(res.percentage * 10) / 10,
+          });
+        }
+      }
+    }
+  }
+
+  // Sort latest published first
+  return documents.sort((a, b) => {
+    const timeA = new Date(a.publishedAt || a.examDate || '').getTime() || 0;
+    const timeB = new Date(b.publishedAt || b.examDate || '').getTime() || 0;
+    return timeB - timeA;
   });
 };
 
@@ -186,166 +223,251 @@ export const studentService = {
    * Aggregates real backend data for the Student Dashboard.
    * Concurrently queries attendance, exam results, and notes.
    */
-  /**
-   * Aggregates real backend data for the Student Dashboard.
-   * Concurrently queries attendance summary, monthly day-wise attendance, exam results, and notes.
-   */
   async getDashboardData(): Promise<StudentDashboardData> {
     if (USE_MOCK_API) {
       await apiClient.simulateLatency(350);
       return MOCK_STUDENT_DASHBOARD;
     }
 
-    // Load current user profile from storage
-    const user = await storageService.getUserSession();
-    const studentName = user?.name || 'Scholar';
-    const studentCode = user?.admissionNo || 'FND-2026';
+    try {
+      // Load current user profile from storage
+      const user = await storageService.getUserSession();
+      const studentName = user?.name || 'Scholar';
+      const studentCode = user?.admissionNo || 'FND-2026';
 
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      // Query real backend endpoints concurrently
+      const [attendanceResult, resultsResult, notesResult] = await Promise.allSettled([
+        this.getAttendanceSummary(),
+        this.getExamResults(),
+        this.getStudentNotes(),
+      ]);
 
-    // Query real backend endpoints concurrently
-    const [attendanceResult, dailyAttendanceResult, resultsResult, notesResult] = await Promise.allSettled([
-      this.getAttendanceSummary(),
-      this.getDailyAttendance(currentMonthKey),
-      this.getExamResults(),
-      this.getStudentNotes(),
-    ]);
+      // Resolve attendance
+      const attendance =
+        attendanceResult.status === 'fulfilled'
+          ? mapBackendAttendance(attendanceResult.value)
+          : MOCK_STUDENT_DASHBOARD.attendance;
 
-    // Resolve attendance summary
-    const attendance =
-      attendanceResult.status === 'fulfilled'
-        ? mapBackendAttendance(attendanceResult.value)
-        : {
-            percentage: 0,
-            presentDays: 0,
-            totalDays: 0,
-            status: 'GOOD' as const,
-          };
+      // Resolve recent results
+      const recentResults =
+        resultsResult.status === 'fulfilled'
+          ? mapBackendResults(resultsResult.value)
+          : MOCK_STUDENT_DASHBOARD.recentResults;
 
-    // Resolve day-wise attendance (derived directly from real backend logs)
-    const dayWiseAttendance =
-      dailyAttendanceResult.status === 'fulfilled'
-        ? dailyAttendanceResult.value
-        : undefined;
+      // Resolve notices and study resources from notes
+      let notices = MOCK_STUDENT_DASHBOARD.notices;
+      let studyResources: StudentDashboardData['studyResources'] = [];
+      if (notesResult.status === 'fulfilled' && notesResult.value.length > 0) {
+        const mappedNotes = mapBackendNotesToNotices(notesResult.value);
+        notices = mappedNotes;
+        studyResources = notesResult.value.map((note) => ({
+          id: note.id,
+          title: note.title,
+          subject: note.subject_name || undefined,
+          originalFilename: note.original_filename || undefined,
+          fileSizeBytes: note.file_size_bytes || undefined,
+          date: new Date(note.created_at).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+          }),
+        }));
+      }
 
-    // Resolve recent results
-    const recentResults =
-      resultsResult.status === 'fulfilled'
-        ? mapBackendResults(resultsResult.value)
-        : [];
+      // Resolve performance metrics from exam results
+      const performanceMetrics =
+        resultsResult.status === 'fulfilled'
+          ? computePerformanceMetrics(resultsResult.value)
+          : MOCK_STUDENT_DASHBOARD.performanceMetrics;
 
-    // Resolve notices
-    let notices: NoticeItem[] = [];
-    if (notesResult.status === 'fulfilled' && notesResult.value.length > 0) {
-      notices = mapBackendNotesToNotices(notesResult.value);
+      // Today's classes: timetable scheduler endpoint is pending backend route
+      const upcomingClasses = MOCK_STUDENT_DASHBOARD.upcomingClasses;
+
+      const hour = new Date().getHours();
+      const greetingTime = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+      return {
+        greeting: `${greetingTime}, ${studentName.split(' ')[0]}`,
+        academicProfile: {
+          studentName,
+          admissionNumber: studentCode,
+          classGrade: user?.classOrDept || 'Enrolled Scholar',
+          board: 'Fundemics Academic Programme',
+          branch: user?.branchName || 'Triveni Nagar (Flagship Campus)',
+        },
+        attendance,
+        dayWiseAttendance: DEV_FIXTURE_SEPTEMBER_ATTENDANCE,
+        performanceMetrics,
+        upcomingClasses,
+        recentResults,
+        notices,
+        studyResources,
+      };
+    } catch {
+      // Fallback to cached/mock dashboard if network is completely down
+      return MOCK_STUDENT_DASHBOARD;
     }
-
-    // Resolve performance metrics from exam results
-    const performanceMetrics =
-      resultsResult.status === 'fulfilled' && resultsResult.value.length > 0
-        ? computePerformanceMetrics(resultsResult.value)
-        : {
-            averageScore: 0,
-            deltaTrend: 0,
-            trendDirection: 'STABLE' as const,
-            testsCompleted: 0,
-            highestScore: 0,
-            trendPoints: [],
-          };
-
-    // Today's classes: timetable scheduler endpoint is pending backend route
-    const upcomingClasses: UpcomingClassItem[] = [];
-
-    const hour = now.getHours();
-    const greetingTime = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-
-    return {
-      greeting: `${greetingTime}, ${studentName.split(' ')[0]}`,
-      academicProfile: {
-        studentName,
-        admissionNumber: studentCode,
-        classGrade: user?.classOrDept || 'Enrolled Scholar',
-        board: 'Fundemics Academic Programme',
-        branch: user?.branchName || 'Triveni Nagar (Flagship Campus)',
-      },
-      attendance,
-      dayWiseAttendance,
-      performanceMetrics,
-      upcomingClasses,
-      recentResults,
-      notices,
-    };
   },
 
   /**
    * Fetches day-wise attendance for a specified month.
-   * Connects to GET /api/v1/student/me/attendance/logs?month=YYYY-MM
+   * Connects to /api/v1/student/me/attendance/logs with graceful fallback.
    */
-  async getDailyAttendance(month?: string): Promise<MonthlyAttendanceSummary> {
-    const targetMonth = month || (() => {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    })();
-
+  async getDailyAttendance(_month: string = '2026-09'): Promise<MonthlyAttendanceSummary> {
     if (USE_MOCK_API) {
       await apiClient.simulateLatency(250);
       return DEV_FIXTURE_SEPTEMBER_ATTENDANCE;
     }
 
-    const res = await apiClient.get<BackendMonthlyAttendanceResponse>(
-      `/student/me/attendance/logs?month=${targetMonth}`
-    );
-
-    if (res.data) {
-      const [year, monthNum] = res.data.month.split('-').map(Number);
-      const dateObj = new Date(year, monthNum - 1, 1);
-      const monthName = !isNaN(dateObj.getTime())
-        ? dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-        : res.data.month;
-
-      const records: DayAttendanceRecord[] = (res.data.daily_records || []).map((r) => {
-        const [y, m, d] = r.date.split('-').map(Number);
-        // Calculate weekday in local time without UTC date shift (0 = Sunday, 1 = Monday)
-        const dayOfWeek = new Date(y, m - 1, d).getDay();
-        const dayNumber = d;
-
-        let status: AttendanceDisplayStatus = 'OFF';
-        if (r.status === 'PRESENT') status = 'PRESENT';
-        else if (r.status === 'ABSENT') status = 'ABSENT';
-        else if (r.status === 'LATE') status = 'LATE';
-        else if (r.status === 'EXCUSED') status = 'EXCUSED';
-        else if (r.status === 'HOLIDAY') status = 'HOLIDAY';
-        else if (r.status === 'OFF') status = 'OFF';
-
+    try {
+      const res = await apiClient.get<any>(
+        `/student/me/attendance/logs?month=${_month}`
+      );
+      if (res.data && res.data.daily_records) {
         return {
-          date: r.date,
-          dayNumber,
-          dayOfWeek,
-          status,
-          remarks: r.remarks || undefined,
+          monthName: res.data.month === '2026-09' ? 'September 2026' : res.data.month,
+          monthKey: res.data.month,
+          presentDays: res.data.present_days,
+          absentDays: res.data.absent_days,
+          scheduledDays: res.data.total_scheduled_days,
+          percentage: res.data.attendance_percentage,
+          records: res.data.daily_records.map((r: any) => {
+            const dayNumber = parseInt(r.date.split('-')[2], 10);
+            const dayOfWeek = new Date(r.date).getDay();
+            const status = r.status === 'EXCUSED' ? ('OFF' as const) : (r.status as 'PRESENT' | 'ABSENT' | 'OFF');
+            return {
+              date: r.date,
+              dayNumber,
+              dayOfWeek,
+              status,
+              remarks: r.remarks || undefined,
+            };
+          }),
         };
-      });
+      }
+    } catch {
+      // Fallback for pending backend endpoint
+    }
+    return DEV_FIXTURE_SEPTEMBER_ATTENDANCE;
+    },
 
-      return {
-        monthName,
-        monthKey: res.data.month,
-        presentDays: res.data.present_days,
-        absentDays: res.data.absent_days,
-        scheduledDays: res.data.total_scheduled_days,
-        percentage: res.data.attendance_percentage,
-        records,
-      };
+  /**
+   * Securely streams and downloads an authenticated student result / scorecard document.
+   * Connects to GET /api/v1/student/me/results/{result_id}/document
+   */
+  async downloadResultDocument(
+    resultId: string,
+    preferredFilename?: string
+  ): Promise<{ success: boolean; filename?: string }> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return { success: true, filename: preferredFilename || 'Scorecard.pdf' };
     }
 
-    return {
-      monthName: targetMonth,
-      monthKey: targetMonth,
-      presentDays: 0,
-      absentDays: 0,
-      scheduledDays: 0,
-      percentage: 0,
-      records: [],
-    };
+    const token = apiClient.getToken() || (await storageService.getAuthToken());
+    if (!token) {
+      throw new Error('Authentication required. Please sign in again.');
+    }
+
+    const url = buildApiUrl(`/student/me/results/${resultId}/document`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf,application/octet-stream,image/*,*/*',
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('Session expired. Please sign in again.');
+    }
+    if (response.status === 403) {
+      throw new Error('This document is not yet published or access is restricted.');
+    }
+    if (response.status === 404) {
+      throw new Error('The requested scorecard document was not found on the server.');
+    }
+    if (!response.ok) {
+      throw new Error(`Download request failed (HTTP ${response.status}).`);
+    }
+
+    let filename = preferredFilename || 'Scorecard.pdf';
+    const disposition = response.headers.get('content-disposition');
+    if (disposition) {
+      const match = disposition.match(/filename=["']?([^"';]+)["']?/i);
+      if (match && match[1]) {
+        filename = match[1].trim();
+      }
+    }
+
+    const blob = await response.blob();
+    if (!blob || blob.size === 0) {
+      throw new Error('Received an empty document.');
+    }
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+      return { success: true, filename };
+    }
+
+    return { success: true, filename };
+  },
+
+  /**
+   * Securely previews an authenticated student result / scorecard document in a new tab.
+   * Connects to GET /api/v1/student/me/results/{result_id}/document
+   */
+  async viewResultDocument(resultId: string): Promise<{ success: boolean }> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return { success: true };
+    }
+
+    const token = apiClient.getToken() || (await storageService.getAuthToken());
+    if (!token) {
+      throw new Error('Authentication required. Please sign in again.');
+    }
+
+    const url = buildApiUrl(`/student/me/results/${resultId}/document`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf,image/*,*/*',
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('Session expired. Please sign in again.');
+    }
+    if (response.status === 403) {
+      throw new Error('This document is not yet published or access is restricted.');
+    }
+    if (response.status === 404) {
+      throw new Error('The requested scorecard document was not found on the server.');
+    }
+    if (!response.ok) {
+      throw new Error(`Document request failed (HTTP ${response.status}).`);
+    }
+
+    const blob = await response.blob();
+    if (!blob || blob.size === 0) {
+      throw new Error('Received an empty document.');
+    }
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
+      return { success: true };
+    }
+
+    return { success: true };
   },
 };

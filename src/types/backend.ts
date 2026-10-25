@@ -32,13 +32,50 @@ export interface BackendMessageResponse {
   message: string;
 }
 
+export interface BackendStudentSelfRegisterRequest {
+  name: string;
+  email: string;
+  phone?: string | null;
+  password: string;
+  class_id: string;
+  batch_id: string;
+}
+
+export interface BackendVerifyEmailRequest {
+  token: string;
+  email?: string | null;
+}
+
+export interface BackendResendVerificationRequest {
+  email: string;
+}
+
+export interface BackendClassResponse {
+  id: string;
+  name: string;
+  code: string;
+  board: string;
+  academic_year: string;
+  status: string;
+}
+
+export interface BackendBatchResponse {
+  id: string;
+  class_id: string;
+  name: string;
+  code: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+}
+
 export interface BackendUserProfileResponse {
   id: string;
   name: string;
   email: string;
   phone: string | null;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT';
-  status: 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED' | 'INACTIVE';
+  status: 'ACTIVE' | 'PENDING_VERIFICATION' | 'PENDING_APPROVAL' | 'REJECTED' | 'SUSPENDED' | 'INACTIVE';
   student_id: string | null;
   teacher_id: string | null;
   student_code: string | null;
@@ -97,6 +134,9 @@ export interface BackendSubjectResult {
   percentage: number;
   grade: string | null;
   published_at: string | null;
+  document_file_id?: string | null;
+  document_filename?: string | null;
+  has_document?: boolean;
 }
 
 export interface BackendStudentExamSummaryResponse {
