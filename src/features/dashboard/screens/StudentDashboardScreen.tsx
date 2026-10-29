@@ -13,13 +13,9 @@ import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { StudentProfileHeader } from '../components/StudentProfileHeader';
-import { StudentQuickMetrics } from '../components/StudentQuickMetrics';
-import { StudentAcademicOverview } from '../components/StudentAcademicOverview';
 import { StudentAttendanceSummaryCard } from '../components/StudentAttendanceSummaryCard';
 import { StudentPerformanceCard } from '../components/StudentPerformanceCard';
-import { StudentClassesCard } from '../components/StudentClassesCard';
-import { StudentStudyResourcesCard } from '../components/StudentStudyResourcesCard';
-import { StudentNoticesCard } from '../components/StudentNoticesCard';
+import { StudentRecentActivityCard } from '../components/StudentRecentActivityCard';
 import { DashboardSkeleton } from '../components/DashboardSkeleton';
 import { TestResultDetailSheet } from '../../results/components/TestResultDetailSheet';
 import { useStudentDashboard } from '../hooks/useStudentDashboard';
@@ -27,10 +23,10 @@ import { useAuth } from '../../../app/providers/AuthContext';
 import { RecentResultItem } from '../../../types/dashboard';
 
 export const StudentDashboardScreen: React.FC = () => {
-  const { colors, spacing } = useTheme();
+  const { colors, spacing, borderRadius } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const { data, loading, refreshing, error, refetch, onRefresh } = useStudentDashboard();
 
@@ -39,7 +35,7 @@ export const StudentDashboardScreen: React.FC = () => {
   const [detailVisible, setDetailVisible] = useState(false);
 
   // Safe bottom padding so scrollable content is NEVER hidden behind bottom tab bar
-  const bottomContentPadding = Math.max(insets.bottom, 16) + 84;
+  const bottomContentPadding = Math.max(insets.bottom, 16) + 80;
 
   if (loading && !data) {
     return (
@@ -63,7 +59,6 @@ export const StudentDashboardScreen: React.FC = () => {
     academicProfile,
     attendance,
     performanceMetrics,
-    upcomingClasses,
     recentResults,
     notices,
     studyResources,
@@ -88,12 +83,12 @@ export const StudentDashboardScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={colors.brandBlue || colors.primary}
-            colors={[colors.brandBlue || colors.primary]}
+            tintColor={colors.navy}
+            colors={[colors.navy]}
           />
         }
       >
-        {/* 1. BRAND-LED COMPACT NATURAL-SCROLLING NAVY PROFILE HEADER */}
+        {/* 1. BRAND-LED RESTRAINED NAVY PROFILE HEADER */}
         <StudentProfileHeader
           studentName={academicProfile.studentName}
           greeting={data.greeting}
@@ -104,10 +99,10 @@ export const StudentDashboardScreen: React.FC = () => {
           avatarUrl={user?.avatarUrl}
           hasUnreadNotifications={notices && notices.length > 0}
           onNotificationPress={() => navigation.navigate('StudentNotificationsTab')}
-          onSignOut={logout}
+          onProfilePress={() => navigation.navigate('StudentProfile')}
         />
 
-        {/* 2. CARD CONTENT CONTAINER */}
+        {/* 2. CARD CONTENT CONTAINER WITH STRICT VISUAL HIERARCHY */}
         <View style={[styles.mainCardsSection, { paddingHorizontal: spacing.screenPadding }]}>
           {/* Background Sync Error Banner (Non-destructive) */}
           {error && (
@@ -117,6 +112,7 @@ export const StudentDashboardScreen: React.FC = () => {
                 {
                   backgroundColor: colors.dangerContainer,
                   borderColor: colors.danger,
+                  borderRadius: borderRadius.sm,
                 },
               ]}
             >
@@ -132,39 +128,16 @@ export const StudentDashboardScreen: React.FC = () => {
             </View>
           )}
 
-          {/* Quick Pulse Metrics (Attendance, Test Average, Classes) */}
-          <StudentQuickMetrics
-            attendancePercentage={attendance.percentage}
-            presentDays={attendance.presentDays}
-            totalDays={attendance.totalDays}
-            testAverage={performanceMetrics?.averageScore}
-            deltaTrend={performanceMetrics?.deltaTrend}
-            trendDirection={performanceMetrics?.trendDirection}
-            classesCount={upcomingClasses.length}
-            nextClassTime={upcomingClasses.length > 0 ? upcomingClasses[0].time.split(' - ')[0] : undefined}
-            onAttendancePress={() => navigation.navigate('StudentAttendance')}
-            onPerformancePress={() => navigation.navigate('StudentResultsTab')}
-            onTimetablePress={() => navigation.navigate('StudentClassesTab')}
-          />
-
-          {/* Academic Overview: Programme & Enrollment Details */}
-          <StudentAcademicOverview
-            classGrade={academicProfile.classGrade}
-            board={academicProfile.board}
-            admissionNumber={academicProfile.admissionNumber}
-            branch={academicProfile.branch}
-          />
-
-          {/* Attendance Summary Card (Green accent, compliant status) */}
+          {/* HIERARCHY #1: ATTENDANCE OVERVIEW (Most visually prominent academic component) */}
           <StudentAttendanceSummaryCard
             percentage={attendance.percentage}
             presentDays={attendance.presentDays}
             totalDays={attendance.totalDays}
             status={attendance.status}
-            onViewDetails={() => navigation.navigate('StudentAttendance')}
+            onViewDetails={() => navigation.navigate('StudentAttendanceTab')}
           />
 
-          {/* Test Performance Card (Blue & Gold accents) */}
+          {/* HIERARCHY #2: EXAMINATION PERFORMANCE */}
           <StudentPerformanceCard
             metrics={performanceMetrics}
             results={recentResults}
@@ -172,22 +145,15 @@ export const StudentDashboardScreen: React.FC = () => {
             onViewAll={() => navigation.navigate('StudentResultsTab')}
           />
 
-          {/* Today's Timetable & Classes (Green accent) */}
-          <StudentClassesCard
-            classes={upcomingClasses}
-            onViewAll={() => navigation.navigate('StudentClassesTab')}
-          />
-
-          {/* Study Resources / Notes (Brand blue accent) */}
-          <StudentStudyResourcesCard
-            resources={studyResources}
-            onViewAll={() => navigation.navigate('StudentClassesTab')}
-          />
-
-          {/* Official Notices & Circulars (Warm accent) */}
-          <StudentNoticesCard
+          {/* HIERARCHY #3: RECENT ACADEMIC ACTIVITY (Unified chronological stream) */}
+          <StudentRecentActivityCard
+            recentResults={recentResults}
+            studyResources={studyResources}
             notices={notices}
-            onViewAll={() => navigation.navigate('StudentNotificationsTab')}
+            onSelectResult={handleSelectResult}
+            onNavigateStudyMaterial={() => navigation.navigate('StudentStudyMaterialTab')}
+            onNavigateNotices={() => navigation.navigate('StudentNotificationsTab')}
+            onNavigateResults={() => navigation.navigate('StudentResultsTab')}
           />
         </View>
       </ScrollView>
@@ -216,7 +182,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    borderRadius: 8,
     borderWidth: 1,
     marginBottom: 12,
   },

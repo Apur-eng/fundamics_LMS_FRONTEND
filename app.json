@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Fundamics LMS",
-    "slug": "fundamics-lms",
+    "slug": "apurv-singh",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -28,6 +28,12 @@
     "plugins": [
       "expo-asset",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3c923ee7-e132-4276-a9c1-fe6963483605"
+      }
+    },
+    "owner": "apurvsingh21s-team"
   }
 }

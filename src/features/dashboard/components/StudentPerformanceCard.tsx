@@ -20,9 +20,10 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
 }) => {
   const { colors, spacing, borderRadius } = useTheme();
 
-  const averageScore = metrics?.averageScore ?? (results.length > 0 ? results[0].score : 0);
+  const averageScore = metrics?.averageScore ?? (results.length > 0 ? results[0].score : null);
   const isUp = metrics?.trendDirection === 'UP';
   const delta = metrics?.deltaTrend;
+  const testsCompleted = metrics?.testsCompleted ?? results.length;
   const recentItems = results.slice(0, 2);
 
   const formatDate = (dateStr: string) => {
@@ -52,21 +53,21 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
           <View
             style={[
               styles.iconWrapper,
-              { backgroundColor: 'rgba(52, 120, 184, 0.08)' },
+              { backgroundColor: colors.iconBlueBg },
             ]}
           >
-            <Ionicons name="trophy-outline" size={17} color={colors.brandBlue || '#3478B8'} />
+            <Ionicons name="ribbon-outline" size={17} color={colors.iconBlue} />
           </View>
           <View>
             <Text
               variant="caption"
               weight="700"
-              style={[styles.sectionHeader, { color: colors.brandBlue || '#3478B8' }]}
+              style={[styles.sectionHeader, { color: colors.iconBlue }]}
             >
-              ASSESSMENT & PERFORMANCE
+              EXAMINATION PERFORMANCE
             </Text>
             <Text variant="bodySmall" color="secondary" weight="500">
-              Evaluations & Progress Benchmarks
+              Evaluations & Academic Benchmarks
             </Text>
           </View>
         </View>
@@ -78,7 +79,7 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
           accessibilityRole="button"
           accessibilityLabel="View all test results"
         >
-          <Text variant="caption" color="primaryBlue" weight="700">
+          <Text variant="caption" color="primary" weight="700">
             All Results →
           </Text>
         </TouchableOpacity>
@@ -88,66 +89,66 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
       <View style={styles.metricsRow}>
         <View style={styles.scoreBlock}>
           <Text variant="caption" color="secondary" weight="600">
-            Institutional Average
+            Average Score
           </Text>
           <View style={styles.scoreNumberRow}>
             <Text
               style={[
                 styles.scoreText,
-                { color: colors.brandBlue || '#3478B8' },
+                { color: colors.navy },
               ]}
               weight="800"
             >
-              {typeof averageScore === 'number' ? averageScore.toFixed(1) : averageScore}
+              {averageScore !== null ? (typeof averageScore === 'number' ? averageScore.toFixed(1) : averageScore) : '—'}
             </Text>
-            <Text
-              style={[
-                styles.scoreUnit,
-                { color: colors.brandBlue || '#3478B8' },
-              ]}
-              weight="700"
-            >
-              %
-            </Text>
+            {averageScore !== null && (
+              <Text
+                style={[
+                  styles.scoreUnit,
+                  { color: colors.textSecondary },
+                ]}
+                weight="600"
+              >
+                %
+              </Text>
+            )}
           </View>
         </View>
 
-        {delta !== undefined && (
+        {delta !== undefined && delta > 0 && (
           <View
             style={[
               styles.trendBadge,
               {
-                backgroundColor: isUp ? 'rgba(22, 132, 91, 0.08)' : 'rgba(217, 72, 72, 0.08)',
-                borderColor: isUp ? 'rgba(22, 132, 91, 0.25)' : 'rgba(217, 72, 72, 0.25)',
+                backgroundColor: isUp ? colors.accentContainer : colors.dangerContainer,
+                borderColor: isUp ? 'rgba(22, 133, 117, 0.3)' : 'rgba(196, 61, 75, 0.3)',
               },
             ]}
           >
             <Ionicons
               name={isUp ? 'trending-up' : 'trending-down'}
-              size={14}
-              color={isUp ? colors.success : colors.danger}
+              size={13}
+              color={isUp ? colors.accent : colors.danger}
               style={{ marginRight: 4 }}
             />
             <Text
               variant="caption"
               weight="700"
-              style={{ color: isUp ? colors.success : colors.danger, fontSize: 11 }}
+              style={{ color: isUp ? colors.accent : colors.danger, fontSize: 10 }}
             >
               {isUp ? `+${delta}%` : `-${delta}%`} vs prev
             </Text>
           </View>
         )}
 
-        {metrics?.highestScore !== undefined && (
-          <View style={styles.highestBlock}>
-            <Text variant="caption" color="secondary" weight="600">
-              Peak Score
-            </Text>
-            <Text variant="body" color="primary" weight="700" style={{ marginTop: 2 }}>
-              {metrics.highestScore}%
-            </Text>
-          </View>
-        )}
+        <View style={styles.completedBlock}>
+          <Text variant="caption" color="secondary" weight="600">
+            Tests Evaluated
+          </Text>
+          <Text variant="body" color="primary" weight="700" style={{ marginTop: 2 }}>
+            {testsCompleted} {testsCompleted === 1 ? 'test' : 'tests'}
+          </Text>
+        </View>
       </View>
 
       {/* Divider */}
@@ -185,9 +186,7 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
                     <Text variant="caption" color="secondary" weight="500">
                       {item.subject}
                     </Text>
-                    <Text variant="caption" color="muted" style={{ marginHorizontal: 6 }}>
-                      •
-                    </Text>
+                    <View style={[styles.subRowDivider, { backgroundColor: colors.border }]} />
                     <Text variant="caption" color="muted">
                       {formatDate(item.date)}
                     </Text>
@@ -199,7 +198,7 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
                     variant="body"
                     weight="700"
                     style={{
-                      color: isDistinction ? (colors.warmGold || '#F2C94C') : colors.textPrimary,
+                      color: isDistinction ? colors.warmGold : colors.textPrimary,
                       fontSize: 14,
                     }}
                   >
@@ -221,9 +220,9 @@ export const StudentPerformanceCard: React.FC<StudentPerformanceCardProps> = ({
         </View>
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name="document-text-outline" size={20} color={colors.textMuted} />
+          <Ionicons name="document-text-outline" size={18} color={colors.textMuted} />
           <Text variant="caption" color="muted" style={{ marginTop: 4 }}>
-            No recent assessment records published.
+            No recent examination results published.
           </Text>
         </View>
       )}
@@ -253,7 +252,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -272,39 +271,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 4,
   },
-  scoreBlock: {},
+  scoreBlock: {
+    flex: 1,
+  },
   scoreNumberRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginTop: 2,
   },
   scoreText: {
-    fontSize: 28,
-    lineHeight: 32,
-    letterSpacing: -0.8,
+    fontSize: 26,
+    lineHeight: 30,
+    letterSpacing: -0.5,
   },
   scoreUnit: {
-    fontSize: 16,
+    fontSize: 15,
     marginLeft: 2,
   },
   trendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
     borderWidth: 1,
   },
-  highestBlock: {
+  completedBlock: {
     alignItems: 'flex-end',
   },
   cardDivider: {
     height: 1,
-    marginVertical: 10,
+    marginVertical: 12,
   },
-  recentList: {
-    marginTop: 2,
-  },
+  recentList: {},
   resultItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -316,20 +315,25 @@ const styles = StyleSheet.create({
   },
   resultItemLeft: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 10,
   },
   resultSubRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 2,
   },
+  subRowDivider: {
+    width: 1,
+    height: 10,
+    marginHorizontal: 8,
+  },
   resultItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   emptyContainer: {
-    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 12,
   },
 });

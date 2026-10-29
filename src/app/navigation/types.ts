@@ -15,15 +15,20 @@ export type AuthStackParamList = {
 
 export type StudentTabParamList = {
   StudentDashboardTab: undefined;
-  StudentClassesTab: undefined;
-  StudentAssignmentsTab: undefined;
+  StudentAttendanceTab: undefined;
+  StudentStudyMaterialTab: undefined;
   StudentResultsTab: undefined;
   StudentNotificationsTab: undefined;
+  // Backward compatibility aliases if any external callers use previous tab names
+  StudentClassesTab?: undefined;
+  StudentAssignmentsTab?: undefined;
 };
 
 export type StudentStackParamList = {
   StudentTabs: NavigatorScreenParams<StudentTabParamList> | undefined;
   StudentAttendance: undefined;
+  StudentProfile: undefined;
+  StudentStudyMaterial: undefined;
 };
 
 export type TeacherTabParamList = {

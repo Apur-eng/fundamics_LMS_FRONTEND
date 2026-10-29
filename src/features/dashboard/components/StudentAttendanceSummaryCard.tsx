@@ -29,8 +29,8 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
     status === 'EXCELLENT' || percentage >= 90
       ? 'Exemplary'
       : status === 'WARNING' || percentage < 75
-      ? 'Action Required'
-      : 'On Track';
+      ? 'Below Threshold'
+      : 'Compliant';
 
   return (
     <View
@@ -51,19 +51,18 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
           <View
             style={[
               styles.iconWrapper,
-              { backgroundColor: colors.emeraldContainer },
+              { backgroundColor: colors.iconEmeraldBg },
             ]}
           >
-            <Ionicons name="checkbox-outline" size={17} color={colors.emerald} />
+            <Ionicons name="calendar-outline" size={17} color={colors.iconEmerald} />
           </View>
           <View>
             <Text
               variant="caption"
-              color="emerald"
               weight="700"
-              style={styles.sectionHeader}
+              style={[styles.sectionHeader, { color: colors.iconEmerald }]}
             >
-              ATTENDANCE RECORD
+              ATTENDANCE OVERVIEW
             </Text>
             <Text variant="bodySmall" color="secondary" weight="500">
               Institutional Session Compliance
@@ -78,20 +77,20 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
           accessibilityRole="button"
           accessibilityLabel="View full attendance ledger"
         >
-          <Text variant="caption" color="primaryBlue" weight="700">
-            Full Log →
+          <Text variant="caption" color="primary" weight="700">
+            View Ledger →
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Metrics Row */}
+      {/* Metrics Row: Big Percentage & Stats */}
       <View style={styles.metricsRow}>
         <View style={styles.percentBlock}>
           <View style={styles.percentNumberRow}>
             <Text
               style={[
                 styles.percentText,
-                { color: colors.emerald },
+                { color: isCompliant ? colors.navy : colors.warning },
               ]}
               weight="800"
             >
@@ -100,9 +99,9 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
             <Text
               style={[
                 styles.percentUnit,
-                { color: colors.emerald },
+                { color: colors.textSecondary },
               ]}
-              weight="700"
+              weight="600"
             >
               %
             </Text>
@@ -112,16 +111,22 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
             style={[
               styles.statusBadge,
               {
-                backgroundColor: isCompliant ? colors.emeraldContainer : colors.coralContainer,
-                borderColor: isCompliant ? 'rgba(21, 150, 106, 0.25)' : 'rgba(217, 105, 97, 0.25)',
+                backgroundColor: isCompliant ? colors.accentContainer : colors.warningContainer,
+                borderColor: isCompliant ? 'rgba(22, 133, 117, 0.3)' : 'rgba(183, 121, 31, 0.3)',
               },
             ]}
           >
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: isCompliant ? colors.accent : colors.warning },
+              ]}
+            />
             <Text
               variant="caption"
               style={[
                 styles.statusBadgeText,
-                { color: isCompliant ? colors.emerald : colors.coral },
+                { color: isCompliant ? colors.accent : colors.warning },
               ]}
               weight="700"
             >
@@ -130,17 +135,17 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
           </View>
         </View>
 
-        <View style={styles.dividerCol} />
+        <View style={[styles.dividerCol, { backgroundColor: colors.border }]} />
 
         <View style={styles.statColumns}>
           <View style={styles.singleStat}>
             <Text variant="caption" color="secondary" weight="600">
-              Present Sessions
+              Sessions Attended
             </Text>
             <Text variant="body" color="primary" weight="700" style={{ marginTop: 2 }}>
               {presentDays}{' '}
               <Text variant="caption" color="muted">
-                / {totalDays}
+                / {totalDays} total
               </Text>
             </Text>
           </View>
@@ -149,19 +154,24 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
             <Text variant="caption" color="secondary" weight="600">
               Recorded Absences
             </Text>
-            <Text variant="body" color={absentDays > 0 ? 'secondary' : 'emerald'} weight="700" style={{ marginTop: 2 }}>
-              {absentDays} {absentDays === 1 ? 'day' : 'days'}
+            <Text
+              variant="body"
+              color={absentDays > 0 ? 'secondary' : 'accent'}
+              weight="700"
+              style={{ marginTop: 2 }}
+            >
+              {absentDays} {absentDays === 1 ? 'session' : 'sessions'}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Progress Track */}
+      {/* Clean Progress Track */}
       <View style={styles.progressContainer}>
         <View
           style={[
             styles.progressTrack,
-            { backgroundColor: colors.borderLight },
+            { backgroundColor: colors.surfaceVariant },
           ]}
         >
           <View
@@ -169,17 +179,17 @@ export const StudentAttendanceSummaryCard: React.FC<StudentAttendanceSummaryCard
               styles.progressFill,
               {
                 width: `${clampedProgress}%`,
-                backgroundColor: colors.emerald,
+                backgroundColor: isCompliant ? colors.accent : colors.warning,
               },
             ]}
           />
         </View>
         <View style={styles.benchmarkRow}>
-          <Text variant="caption" color="muted" style={{ fontSize: 9 }}>
-            Min. Requirement: 75%
+          <Text variant="caption" color="muted" style={{ fontSize: 10 }}>
+            Institutional Threshold: 75%
           </Text>
-          <Text variant="caption" color="muted" style={{ fontSize: 9 }}>
-            Target: 95%
+          <Text variant="caption" color="muted" style={{ fontSize: 10 }}>
+            Target: 95%+
           </Text>
         </View>
       </View>
@@ -209,7 +219,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -236,21 +246,29 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   percentText: {
-    fontSize: 32,
-    lineHeight: 36,
+    fontSize: 34,
+    lineHeight: 38,
     letterSpacing: -1,
   },
   percentUnit: {
     fontSize: 18,
-    marginLeft: 2,
+    marginLeft: 3,
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
-    marginTop: 4,
+    marginTop: 6,
+  },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginRight: 4,
   },
   statusBadgeText: {
     fontSize: 10,
@@ -259,8 +277,7 @@ const styles = StyleSheet.create({
   },
   dividerCol: {
     width: 1,
-    height: 52,
-    backgroundColor: '#E5E9EE',
+    height: 54,
     marginHorizontal: 16,
   },
   statColumns: {

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
@@ -30,6 +31,7 @@ const CATEGORIES: { key: NotificationCategory; label: string }[] = [
 
 export const NotificationsScreen: React.FC = () => {
   const { colors, spacing, borderRadius } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const {
     items,
@@ -63,8 +65,8 @@ export const NotificationsScreen: React.FC = () => {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <AppHeader
         title="Notice Board"
-        subtitle="Official circulars & academic notices"
-        badgeLabel="Lucknow Hub"
+        subtitle="Official circulars & academic announcements"
+        badgeLabel="Official Circulars"
       />
 
       {/* Horizontal Category Filter Pills */}
@@ -158,14 +160,14 @@ export const NotificationsScreen: React.FC = () => {
         <ScrollView
           contentContainerStyle={{
             padding: spacing.screenPadding,
-            paddingBottom: spacing.massive,
+            paddingBottom: Math.max(insets.bottom, 16) + 80,
           }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
+              tintColor={colors.navy}
+              colors={[colors.navy]}
             />
           }
         >
@@ -185,12 +187,12 @@ export const NotificationsScreen: React.FC = () => {
                     style={[
                       styles.iconWrap,
                       {
-                        backgroundColor: colors.surfaceVariant,
+                        backgroundColor: colors.iconAmberBg,
                         borderRadius: borderRadius.md,
                       },
                     ]}
                   >
-                    <Ionicons name={icon} size={18} color={colors.primary} />
+                    <Ionicons name={icon} size={18} color={colors.iconAmber} />
                   </View>
                 }
                 rightElement={

@@ -138,6 +138,8 @@ export interface ColorTheme {
   brandBlue: string;
   brandGreen: string;
   warmGold: string;
+  teal: string;
+  tealContainer: string;
   primaryBlue: string;
   emerald: string;
   emeraldContainer: string;
@@ -159,93 +161,121 @@ export interface ColorTheme {
   navyPrimary: string;
   navyElevated: string;
   divider: string;
+
+  // Professional Academic Icon Palette Tokens
+  iconNavy: string;
+  iconEmerald: string;
+  iconEmeraldBg: string;
+  iconBlue: string;
+  iconBlueBg: string;
+  iconAmber: string;
+  iconAmberBg: string;
+  iconViolet: string;
+  iconVioletBg: string;
+  iconSlate: string;
+  iconSlateBg: string;
 }
 
 export const lightThemeColors: ColorTheme = {
-  // Official Fundamics Brand Palette
-  primary: '#12365A',                        // Primary navy
-  primaryLight: '#3478B8',                   // Brand blue
-  primaryDark: '#0B2948',                    // Deep navy
-  primaryContainer: '#EAF0F6',               // Soft navy container
+  // Primary — Deep Navy
+  primary: '#142B45',                        // Main brand color
+  primaryLight: '#223F61',                   // Slightly lifted navy
+  primaryDark: '#0D1B2A',                    // Darker navy
+  primaryContainer: '#EDF1F5',               // Secondary surface
   onPrimary: '#FFFFFF',
 
-  // Brand blue — CTAs, links, active icons
-  accent: '#3478B8',                         // Brand blue
-  accentLight: '#4A8EC9',
-  accentDark: '#12365A',
-  accentContainer: 'rgba(52, 120, 184, 0.08)',
+  // Accent — Muted Teal
+  accent: '#168575',                         // Primary accent
+  accentLight: '#1E9A88',
+  accentDark: '#0F6357',
+  accentContainer: '#E7F4F0',               // Light accent surface
   onAccent: '#FFFFFF',
 
-  // Warm gold — distinction badges, merit
-  distinction: '#F2C94C',
-  distinctionContainer: 'rgba(242, 201, 76, 0.12)',
-  onDistinction: '#8F6218',
+  // Supporting — Muted Gold (sparingly for premium brand details)
+  distinction: '#C5A15A',
+  distinctionContainer: 'rgba(197, 161, 90, 0.12)',
+  onDistinction: '#7A5F26',
 
-  // Page & surface hierarchy
-  background: '#FAFAF7',                     // Main background (warm white / ivory)
-  surface: '#FFFFFF',                        // Pure white card surface
+  // Background — Soft Neutral
+  background: '#F5F7FA',                     // Main background
+  surface: '#FFFFFF',                        // Card background
   surfaceElevated: '#FFFFFF',
-  surfaceVariant: '#F3F5F8',
+  surfaceVariant: '#EDF1F5',                 // Secondary surface
 
   // Structural borders
-  border: '#E7EAF0',                         // Border
-  borderLight: '#F0F3F7',
-  borderFocus: '#12365A',
+  border: '#E4E9F0',                         // Borders
+  borderLight: '#EDF1F5',
+  borderFocus: '#142B45',
 
   // Typography
-  textPrimary: '#1E293B',                    // Primary text
-  textSecondary: '#64748B',                  // Secondary text
-  textMuted: '#94A3B8',
+  textPrimary: '#182230',                    // Primary text
+  textSecondary: '#667085',                  // Secondary text
+  textMuted: '#98A2B3',                      // Muted text
   textInverse: '#FFFFFF',
   textInverseMuted: '#CBD5E1',
 
-  // Semantics
-  success: '#16845B',                        // Success (present attendance)
-  successContainer: 'rgba(22, 132, 91, 0.08)',
-  onSuccess: '#0F5B3F',
+  // Semantics & Status Conditions
+  success: '#168575',                        // Positive indicator (muted teal)
+  successContainer: '#E7F4F0',               // Light teal surface
+  onSuccess: '#0F6357',
 
-  warning: '#D99A24',                        // Warning (warm gold / amber)
-  warningContainer: 'rgba(217, 154, 36, 0.08)',
-  onWarning: '#92400E',
+  warning: '#B7791F',                        // Warning (genuine warning only)
+  warningContainer: 'rgba(183, 121, 31, 0.08)',
+  onWarning: '#7B4F10',
 
-  danger: '#D94848',                         // Error (absent attendance)
-  dangerContainer: 'rgba(217, 72, 72, 0.08)',
-  onDanger: '#9E2A27',
+  danger: '#C43D4B',                         // Error (genuine error / absence only)
+  dangerContainer: 'rgba(196, 61, 75, 0.08)',
+  onDanger: '#8C222D',
 
-  info: '#3478B8',                           // Brand blue
-  infoContainer: 'rgba(52, 120, 184, 0.08)',
-  onInfo: '#12365A',
+  info: '#142B45',                           // Deep navy info
+  infoContainer: '#EDF1F5',
+  onInfo: '#142B45',
 
-  overlay: 'rgba(11, 41, 72, 0.35)',
+  overlay: 'rgba(13, 27, 42, 0.45)',
 
   // Official Brand Tokens
-  navy: '#12365A',
-  navyDeep: '#0B2948',
-  brandBlue: '#3478B8',
-  brandGreen: '#76A843',
-  warmGold: '#F2C94C',
+  navy: '#142B45',
+  navyDeep: '#0D1B2A',
+  brandBlue: '#142B45',
+  brandGreen: '#168575',
+  warmGold: '#C5A15A',
+  teal: '#168575',
+  tealContainer: '#E7F4F0',
 
-  // Feature Accent Tokens
-  primaryBlue: '#3478B8',
-  emerald: '#16845B',
-  emeraldContainer: 'rgba(22, 132, 91, 0.08)',
-  violet: '#7657C8',
-  violetContainer: 'rgba(118, 87, 200, 0.08)',
-  skyBlue: '#3478B8',
-  skyBlueContainer: 'rgba(52, 120, 184, 0.08)',
-  amber: '#D99A24',
-  amberContainer: 'rgba(217, 154, 36, 0.08)',
-  coral: '#D94848',
-  coralContainer: 'rgba(217, 72, 72, 0.08)',
-  navyContainer: 'rgba(18, 54, 90, 0.08)',
-  surfaceMint: 'rgba(22, 132, 91, 0.08)',
-  surfaceAmber: 'rgba(242, 201, 76, 0.12)',
+  // Restrained Feature Accent Tokens (disciplined: no competing rainbow colors)
+  primaryBlue: '#142B45',
+  emerald: '#168575',
+  emeraldContainer: '#E7F4F0',
+  violet: '#142B45',
+  violetContainer: '#EDF1F5',
+  skyBlue: '#168575',
+  skyBlueContainer: '#E7F4F0',
+  amber: '#B7791F',
+  amberContainer: 'rgba(183, 121, 31, 0.08)',
+  coral: '#C43D4B',
+  coralContainer: 'rgba(196, 61, 75, 0.08)',
+  navyContainer: 'rgba(20, 43, 69, 0.08)',
+  surfaceMint: '#E7F4F0',
+  surfaceAmber: 'rgba(197, 161, 90, 0.12)',
 
-  academicGold: '#F2C94C',
-  academicGoldContainer: 'rgba(242, 201, 76, 0.12)',
-  navyPrimary: '#12365A',
-  navyElevated: '#1A436D',
-  divider: '#E7EAF0',
+  academicGold: '#C5A15A',
+  academicGoldContainer: 'rgba(197, 161, 90, 0.12)',
+  navyPrimary: '#142B45',
+  navyElevated: '#223F61',
+  divider: '#E4E9F0',
+
+  // Professional Academic Icon Palette Tokens
+  iconNavy: '#142B45',
+  iconEmerald: '#13866B',
+  iconEmeraldBg: '#E8F4EF',
+  iconBlue: '#527DA8',
+  iconBlueBg: '#EAF1F8',
+  iconAmber: '#C58A32',
+  iconAmberBg: '#FBF2E3',
+  iconViolet: '#7969A8',
+  iconVioletBg: '#F0EDFA',
+  iconSlate: '#718096',
+  iconSlateBg: '#EDF1F5',
 };
 
 export const darkThemeColors: ColorTheme = {
@@ -306,11 +336,13 @@ export const darkThemeColors: ColorTheme = {
   overlay: 'rgba(11, 18, 32, 0.8)',
 
   // Official Brand Tokens (dark theme)
-  navy: '#12365A',
-  navyDeep: '#0B2948',
-  brandBlue: '#3478B8',
-  brandGreen: '#76A843',
-  warmGold: '#F2C94C',
+  navy: '#142B45',
+  navyDeep: '#0D1B2A',
+  brandBlue: '#142B45',
+  brandGreen: '#168575',
+  warmGold: '#C5A15A',
+  teal: '#168575',
+  tealContainer: 'rgba(22, 133, 117, 0.2)',
 
   primaryBlue: '#3478B8',
   emerald: '#15966A',
@@ -333,4 +365,17 @@ export const darkThemeColors: ColorTheme = {
   navyPrimary: '#101D38',
   navyElevated: '#141F32',
   divider: '#29354A',
+
+  // Professional Academic Icon Palette Tokens
+  iconNavy: '#8FAECE',
+  iconEmerald: '#38C995',
+  iconEmeraldBg: 'rgba(56, 201, 149, 0.14)',
+  iconBlue: '#6C98C6',
+  iconBlueBg: 'rgba(82, 125, 168, 0.16)',
+  iconAmber: '#E0A348',
+  iconAmberBg: 'rgba(197, 138, 50, 0.16)',
+  iconViolet: '#9B8DC9',
+  iconVioletBg: 'rgba(121, 105, 168, 0.16)',
+  iconSlate: '#94A3B8',
+  iconSlateBg: 'rgba(113, 128, 150, 0.16)',
 };

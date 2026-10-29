@@ -13,8 +13,7 @@ import { useTheme } from '../../../theme';
 import { Text } from '../../../components/common/Text';
 import { Avatar } from '../../../components/common/Avatar';
 
-// Official Fundamics Wings Mark for the top insignia
-const WINGS_FAVICON = require('../../../../assets/favicon.png');
+const BRAND_LOGO = require('../../../../assets/fundamics_logo.png');
 
 export interface StudentProfileHeaderProps {
   studentName: string;
@@ -26,6 +25,7 @@ export interface StudentProfileHeaderProps {
   avatarUrl?: string;
   hasUnreadNotifications?: boolean;
   onNotificationPress?: () => void;
+  onProfilePress?: () => void;
   onSignOut?: () => void;
 }
 
@@ -39,6 +39,7 @@ export const StudentProfileHeader: React.FC<StudentProfileHeaderProps> = ({
   avatarUrl,
   hasUnreadNotifications = false,
   onNotificationPress,
+  onProfilePress,
   onSignOut,
 }) => {
   const { colors, spacing } = useTheme();
@@ -49,31 +50,33 @@ export const StudentProfileHeader: React.FC<StudentProfileHeaderProps> = ({
 
   return (
     <LinearGradient
-      colors={[colors.navyDeep || '#0B2948', colors.navy || '#12365A']}
+      colors={[colors.navyDeep, colors.navy]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[
         styles.container,
         {
-          paddingTop: safeTop + 4,
+          paddingTop: safeTop + 2,
           paddingHorizontal: spacing.screenPadding,
+          paddingBottom: 14,
         },
       ]}
     >
       {/* 1. TOP INSTITUTIONAL BRANDING & ACTIONS ROW */}
       <View style={styles.topRow}>
-        <View style={styles.brandBadge}>
-          <Image
-            source={WINGS_FAVICON}
-            style={styles.brandIcon}
-            resizeMode="contain"
-          />
-          <Text
-            variant="caption"
-            weight="700"
-            style={styles.brandTitle}
-          >
-            FUNDAMICS LMS
+        <View style={styles.brandLockup}>
+          <View style={styles.brandEmblemWrap}>
+            <Image
+              source={BRAND_LOGO}
+              style={styles.brandEmblem}
+              resizeMode="contain"
+              accessibilityRole="image"
+              accessibilityLabel="Fundamics official emblem"
+            />
+          </View>
+          <Text style={styles.brandTitle}>
+            FUNDAMICS{' '}
+            <Text style={[styles.brandSubtitle, { color: colors.warmGold }]}>LMS</Text>
           </Text>
         </View>
 
@@ -85,18 +88,28 @@ export const StudentProfileHeader: React.FC<StudentProfileHeaderProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Ionicons name="notifications-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="notifications-outline" size={17} color="#FFFFFF" />
             {hasUnreadNotifications && (
               <View
                 style={[
                   styles.notificationDot,
-                  { backgroundColor: colors.danger || '#D94848' },
+                  { backgroundColor: colors.danger },
                 ]}
               />
             )}
           </TouchableOpacity>
 
-          {onSignOut && (
+          {onProfilePress ? (
+            <TouchableOpacity
+              onPress={onProfilePress}
+              activeOpacity={0.75}
+              style={[styles.actionIconButton, { marginLeft: 8 }]}
+              accessibilityRole="button"
+              accessibilityLabel="View profile"
+            >
+              <Ionicons name="person-outline" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : onSignOut ? (
             <TouchableOpacity
               onPress={onSignOut}
               activeOpacity={0.75}
@@ -104,125 +117,129 @@ export const StudentProfileHeader: React.FC<StudentProfileHeaderProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Sign out"
             >
-              <Ionicons name="log-out-outline" size={18} color="rgba(255,255,255,0.85)" />
+              <Ionicons name="log-out-outline" size={17} color="rgba(255,255,255,0.85)" />
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
       </View>
 
-      {/* 2. STUDENT PROFILE ROW (Compact, High-Hierarchy) */}
-      <View style={styles.profileRow}>
-        {/* Profile Picture or Restrained Initials Avatar */}
+      {/* 2. COMPACT STUDENT IDENTITY ROW (Tapping navigates to Profile) */}
+      <TouchableOpacity
+        onPress={onProfilePress}
+        disabled={!onProfilePress}
+        activeOpacity={0.8}
+        style={styles.profileRow}
+        accessibilityRole="button"
+        accessibilityLabel="Student profile shortcut"
+      >
         <View style={styles.avatarWrapper}>
           <Avatar
             name={studentName}
             source={avatarUrl ? { uri: avatarUrl } : undefined}
-            size={54}
+            size={46}
             variant="circle"
             accent="primary"
           />
         </View>
 
-        {/* Name and Personalized Greeting */}
         <View style={styles.nameBlock}>
           <Text
             variant="caption"
             weight="700"
-            style={[styles.greetingLabel, { color: colors.warmGold || '#F2C94C' }]}
+            style={[styles.greetingLabel, { color: colors.warmGold }]}
           >
             {greeting.toUpperCase()}
           </Text>
 
-          <Text
-            variant="h2"
-            color="inverse"
-            weight="700"
-            style={styles.studentName}
-            numberOfLines={1}
-          >
-            {studentName}
-          </Text>
-
-          {programmeSubtitle ? (
+          <View style={styles.nameChevronRow}>
             <Text
-              variant="bodySmall"
-              color="inverseMuted"
-              style={styles.programmeText}
+              variant="h3"
+              color="inverse"
+              weight="700"
+              style={styles.studentName}
               numberOfLines={1}
             >
-              {programmeSubtitle}
+              {studentName}
             </Text>
-          ) : null}
-        </View>
-      </View>
-
-      {/* 3. SECONDARY ACADEMIC IDENTITY CHIPS */}
-      <View style={styles.chipsRow}>
-        {admissionNumber ? (
-          <View style={styles.chip}>
-            <Ionicons name="id-card-outline" size={11} color="rgba(255,255,255,0.85)" style={{ marginRight: 4 }} />
-            <Text variant="caption" color="inverse" weight="600">
-              {admissionNumber}
-            </Text>
+            {onProfilePress && (
+              <Ionicons
+                name="chevron-forward"
+                size={15}
+                color="rgba(255,255,255,0.6)"
+                style={{ marginLeft: 3 }}
+              />
+            )}
           </View>
-        ) : null}
 
-        {branch ? (
-          <View style={[styles.chip, { flexShrink: 1 }]}>
-            <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.85)" style={{ marginRight: 4 }} />
-            <Text variant="caption" color="inverse" weight="600" numberOfLines={1}>
-              {branch.split('(')[0].trim()}
-            </Text>
+          {/* Clean Student Details Row (No generic bullet dots, clean wrapped chips/labels) */}
+          <View style={styles.idBatchRow}>
+            {admissionNumber ? (
+              <View style={styles.idChip}>
+                <Text style={styles.idChipText}>ID: {admissionNumber}</Text>
+              </View>
+            ) : null}
+
+            {programmeSubtitle ? (
+              <Text
+                variant="caption"
+                color="inverseMuted"
+                numberOfLines={1}
+                style={styles.programmeText}
+              >
+                {programmeSubtitle}
+              </Text>
+            ) : null}
           </View>
-        ) : null}
-
-        <View style={[styles.chip, styles.statusChip]}>
-          <Ionicons name="checkmark-circle" size={11} color={colors.brandGreen || '#76A843'} style={{ marginRight: 4 }} />
-          <Text variant="caption" color="inverse" weight="600">
-            Active
-          </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  brandBadge: {
+  brandLockup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.09)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
   },
-  brandIcon: {
-    width: 18,
-    height: 18,
-    marginRight: 6,
+  brandEmblemWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+  },
+  brandEmblem: {
+    width: 22,
+    height: 22,
   },
   brandTitle: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 13,
+    fontWeight: '800',
     letterSpacing: 1.1,
+    marginLeft: 8,
+  },
+  brandSubtitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -232,70 +249,74 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   notificationDot: {
     position: 'absolute',
-    top: 5,
-    right: 6,
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    top: 4,
+    right: 5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     borderWidth: 1,
-    borderColor: '#0B2948',
+    borderColor: '#0D1B2A',
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
   avatarWrapper: {
-    borderWidth: 2,
-    borderColor: 'rgba(242, 201, 76, 0.35)',
-    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: 'rgba(197, 161, 90, 0.4)',
+    borderRadius: 25,
     padding: 1.5,
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   nameBlock: {
-    marginLeft: 12,
+    marginLeft: 10,
     flex: 1,
   },
   greetingLabel: {
-    fontSize: 9.5,
-    letterSpacing: 1.1,
-    marginBottom: 2,
+    fontSize: 9,
+    letterSpacing: 1.0,
+    marginBottom: 1,
   },
-  studentName: {
-    fontSize: 19,
-    lineHeight: 23,
-    letterSpacing: -0.3,
-  },
-  programmeText: {
-    fontSize: 11.5,
-    marginTop: 1,
-  },
-  chipsRow: {
+  nameChevronRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  studentName: {
+    fontSize: 16,
+    lineHeight: 20,
+    letterSpacing: -0.2,
+  },
+  idBatchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
     flexWrap: 'wrap',
     gap: 6,
   },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  idChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 1.5,
+    borderRadius: 4,
   },
-  statusChip: {
-    backgroundColor: 'rgba(118, 168, 67, 0.16)',
-    borderColor: 'rgba(118, 168, 67, 0.32)',
+  idChipText: {
+    color: '#CBD5E1',
+    fontSize: 10.5,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  programmeText: {
+    flexShrink: 1,
+    fontSize: 11.5,
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontWeight: '500',
   },
 });

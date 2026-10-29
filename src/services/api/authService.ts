@@ -491,4 +491,63 @@ export const authService = {
       };
     }
   },
+
+  /**
+   * Fetches latest profile details for currently authenticated user via GET /api/v1/auth/me.
+   */
+  async getProfile(): Promise<ApiResponse<BackendUserProfileResponse>> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(250);
+      return {
+        success: true,
+        data: {
+          id: 'mock-usr-std-001',
+          name: 'Priya Sharma',
+          email: 'priya.sharma@fundamics.in',
+          phone: '+91 98765 43210',
+          role: 'STUDENT',
+          status: 'ACTIVE',
+          student_id: 'std-uuid-001',
+          student_code: 'FND-2026-089',
+          teacher_id: null,
+          teacher_code: null,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const res = await apiClient.get<BackendUserProfileResponse>('/auth/me');
+    return {
+      success: true,
+      data: res.data,
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Securely changes current user's password via POST /api/v1/auth/change-password.
+   */
+  async changePassword(oldPassword: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return {
+        success: true,
+        data: { message: 'Password changed successfully (Mock Mode).' },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const res = await apiClient.post<BackendMessageResponse>('/auth/change-password', {
+      old_password: oldPassword,
+      new_password: newPassword,
+    });
+
+    return {
+      success: true,
+      data: {
+        message: res.data?.message || 'Password changed successfully.',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  },
 };

@@ -100,15 +100,15 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
         {
           paddingTop: Math.max(insets.top, 16),
           paddingHorizontal: spacing.screenPadding,
-          paddingBottom: spacing.massive,
+          paddingBottom: Math.max(insets.bottom, 16) + 80,
         },
       ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.primary}
-          colors={[colors.primary]}
+          tintColor={colors.navy}
+          colors={[colors.navy]}
         />
       }
     >
@@ -130,7 +130,7 @@ export const StudentResultsScreen: React.FC<StudentResultsScreenProps> = ({ onBa
             ACADEMIC PERFORMANCE
           </Text>
           <Text variant="h2" color="primary" weight="700">
-            Test Results & Progress
+            Examination Results
           </Text>
         </View>
       </View>

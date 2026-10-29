@@ -22,3 +22,4 @@ export * from './components/StudentNoticesCard';
 export * from './components/StudentQuickMetrics';
 
 export * from './components/StudentProfileHeader';
+export * from './components/StudentRecentActivityCard';

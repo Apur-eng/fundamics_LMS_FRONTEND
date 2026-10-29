@@ -470,4 +470,125 @@ export const studentService = {
 
     return { success: true };
   },
+
+  /**
+   * Securely streams and downloads an authorized student note / study material file.
+   * Connects to GET /api/v1/student/me/notes/{note_id}/download
+   */
+  async downloadNoteFile(
+    noteId: string,
+    preferredFilename?: string
+  ): Promise<{ success: boolean; filename?: string }> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return { success: true, filename: preferredFilename || 'StudyMaterial.pdf' };
+    }
+
+    const token = apiClient.getToken() || (await storageService.getAuthToken());
+    if (!token) {
+      throw new Error('Authentication required. Please sign in again.');
+    }
+
+    const url = buildApiUrl(`/student/me/notes/${noteId}/download`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf,application/octet-stream,image/*,*/*',
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('Session expired. Please sign in again.');
+    }
+    if (response.status === 403) {
+      throw new Error('This study material is restricted or not authorized for your batch.');
+    }
+    if (response.status === 404) {
+      throw new Error('The requested study material file was not found on the server.');
+    }
+    if (!response.ok) {
+      throw new Error(`Download request failed (HTTP ${response.status}).`);
+    }
+
+    let filename = preferredFilename || 'StudyMaterial.pdf';
+    const disposition = response.headers.get('content-disposition');
+    if (disposition) {
+      const match = disposition.match(/filename=["']?([^"';]+)["']?/i);
+      if (match && match[1]) {
+        filename = match[1].trim();
+      }
+    }
+
+    const blob = await response.blob();
+    if (!blob || blob.size === 0) {
+      throw new Error('Received an empty file.');
+    }
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+      return { success: true, filename };
+    }
+
+    return { success: true, filename };
+  },
+
+  /**
+   * Securely previews an authorized student note / study material file in a new tab.
+   * Connects to GET /api/v1/student/me/notes/{note_id}/download
+   */
+  async viewNoteFile(noteId: string): Promise<{ success: boolean }> {
+    if (USE_MOCK_API) {
+      await apiClient.simulateLatency(350);
+      return { success: true };
+    }
+
+    const token = apiClient.getToken() || (await storageService.getAuthToken());
+    if (!token) {
+      throw new Error('Authentication required. Please sign in again.');
+    }
+
+    const url = buildApiUrl(`/student/me/notes/${noteId}/download`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf,image/*,*/*',
+      },
+    });
+
+    if (response.status === 401) {
+      throw new Error('Session expired. Please sign in again.');
+    }
+    if (response.status === 403) {
+      throw new Error('This study material is restricted or not authorized for your batch.');
+    }
+    if (response.status === 404) {
+      throw new Error('The requested study material file was not found on the server.');
+    }
+    if (!response.ok) {
+      throw new Error(`File request failed (HTTP ${response.status}).`);
+    }
+
+    const blob = await response.blob();
+    if (!blob || blob.size === 0) {
+      throw new Error('Received an empty file.');
+    }
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 120000);
+      return { success: true };
+    }
+
+    return { success: true };
+  },
 };

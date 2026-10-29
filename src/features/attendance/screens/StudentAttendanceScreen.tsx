@@ -112,7 +112,6 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
   const totalCount = hasSummary ? summary.total_working_days : null;
 
   // Calendar alignment for 7 columns (Mon-Sun):
-  // Derive month's first day of week directly from activeMonthKey ("YYYY-MM") using actual date arithmetic
   const [activeYear, activeMonthNum] = activeMonthKey.split('-').map(Number);
   const firstDayOfMonth = new Date(activeYear, activeMonthNum - 1, 1);
   const firstDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
@@ -128,15 +127,15 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         {
           paddingTop: Math.max(insets.top, 16),
           paddingHorizontal: spacing.screenPadding,
-          paddingBottom: spacing.massive,
+          paddingBottom: Math.max(insets.bottom, 16) + 70,
         },
       ]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          tintColor={colors.primary}
-          colors={[colors.primary]}
+          tintColor={colors.navy}
+          colors={[colors.navy]}
         />
       }
     >
@@ -158,7 +157,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
             ACADEMIC ATTENDANCE
           </Text>
           <Text variant="h2" color="primary" weight="700">
-            Attendance Record
+            Attendance Ledger
           </Text>
         </View>
       </View>
@@ -171,7 +170,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
             {
               backgroundColor: colors.dangerContainer,
               borderColor: colors.danger,
-              borderRadius: borderRadius.md,
+              borderRadius: borderRadius.sm,
               padding: spacing.sm,
               marginBottom: spacing.md,
               flexDirection: 'row',
@@ -198,9 +197,9 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            borderRadius: borderRadius.lg,
+            borderRadius: borderRadius.md,
             padding: spacing.cardPadding,
-            marginBottom: spacing.lg,
+            marginBottom: spacing.md,
             ...shadows.sm,
           },
         ]}
@@ -214,8 +213,8 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           </Text>
           {hasSummaryData ? (
             <Badge
-              label={overallPercentage! >= 85 ? 'On Track' : 'Warning'}
-              variant={overallPercentage! >= 85 ? 'accent' : 'danger'}
+              label={overallPercentage! >= 75 ? 'Compliant' : 'Below 75%'}
+              variant={overallPercentage! >= 75 ? 'accent' : 'warning'}
               size="md"
               style={{ marginLeft: 10 }}
             />
@@ -232,10 +231,10 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
         {/* 3 Metrics Row */}
         <View style={[styles.triMetricsRow, { borderTopColor: colors.borderLight, marginTop: spacing.md, paddingTop: spacing.md }]}>
           <View style={styles.metricItem}>
-            <Text variant="h3" color={hasSummaryData ? 'success' : 'muted'} weight="700">
+            <Text variant="h3" color={hasSummaryData ? 'accent' : 'muted'} weight="700">
               {hasSummaryData ? presentCount : '—'}
             </Text>
-            <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+            <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
               Present
             </Text>
           </View>
@@ -246,7 +245,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
             <Text variant="h3" color={hasSummaryData ? 'danger' : 'muted'} weight="700">
               {hasSummaryData ? absentCount : '—'}
             </Text>
-            <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
+            <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
               Absent
             </Text>
           </View>
@@ -257,8 +256,8 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
             <Text variant="h3" color={hasSummaryData ? 'primary' : 'muted'} weight="700">
               {hasSummaryData ? totalCount : '—'}
             </Text>
-            <Text variant="caption" color="muted" style={{ marginTop: 2 }}>
-              Scheduled
+            <Text variant="caption" color="secondary" style={{ marginTop: 2 }}>
+              Total Sessions
             </Text>
           </View>
         </View>
@@ -271,11 +270,10 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            borderRadius: borderRadius.md,
+            borderRadius: borderRadius.sm,
             paddingVertical: spacing.sm,
             paddingHorizontal: spacing.md,
             marginBottom: spacing.md,
-            ...shadows.sm,
           },
         ]}
       >
@@ -317,9 +315,9 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            borderRadius: borderRadius.lg,
+            borderRadius: borderRadius.md,
             padding: spacing.cardPadding,
-            marginBottom: spacing.lg,
+            marginBottom: spacing.md,
             ...shadows.sm,
           },
         ]}
@@ -349,64 +347,58 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
 
             {/* Days */}
             {records.map((item) => {
-            const isSelected = selectedDay?.date === item.date;
-            const isPresent = item.status === 'PRESENT';
-            const isAbsent = item.status === 'ABSENT';
-            const isLate = item.status === 'LATE';
-            const isExcused = item.status === 'EXCUSED';
-            const isHolidayOrOff = item.status === 'HOLIDAY' || item.status === 'OFF';
+              const isSelected = selectedDay?.date === item.date;
+              const isPresent = item.status === 'PRESENT';
+              const isAbsent = item.status === 'ABSENT';
+              const isHolidayOrOff = item.status === 'HOLIDAY' || item.status === 'OFF';
 
-            return (
-              <TouchableOpacity
-                key={item.date}
-                onPress={() => setSelectedDay(item)}
-                activeOpacity={0.7}
-                style={[
-                  styles.cellCol,
-                  isSelected && [
-                    styles.selectedCell,
-                    { borderColor: colors.primary, backgroundColor: colors.surfaceVariant },
-                  ],
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`Date ${item.dayNumber}, status ${item.status}`}
-              >
-                <View
+              return (
+                <TouchableOpacity
+                  key={item.date}
+                  onPress={() => setSelectedDay(item)}
+                  activeOpacity={0.7}
                   style={[
-                    styles.cellBadge,
-                    isPresent && { backgroundColor: colors.successContainer },
-                    isAbsent && { backgroundColor: colors.dangerContainer },
-                    isLate && { backgroundColor: '#FFFBEB' },
-                    isExcused && { backgroundColor: '#F0F4FA' },
-                    isHolidayOrOff && { backgroundColor: colors.surfaceVariant },
+                    styles.cellCol,
+                    isSelected && [
+                      styles.selectedCell,
+                      { borderColor: colors.navy, backgroundColor: colors.surfaceVariant },
+                    ],
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Date ${item.dayNumber}, status ${item.status}`}
                 >
-                  {isPresent && <Ionicons name="checkmark" size={12} color={colors.success} />}
-                  {isAbsent && <Ionicons name="close" size={12} color={colors.danger} />}
-                  {isLate && <Ionicons name="time-outline" size={12} color="#926300" />}
-                  {isExcused && <Ionicons name="document-text-outline" size={12} color="#1B4D89" />}
-                  {isHolidayOrOff && <Text variant="caption" color="muted">—</Text>}
-                </View>
-                <Text
-                  variant="caption"
-                  color={isSelected ? 'primary' : isAbsent ? 'danger' : 'secondary'}
-                  weight={isSelected ? '700' : '500'}
-                  style={{ fontSize: 10, marginTop: 2 }}
-                >
-                  {item.dayNumber}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <View
+                    style={[
+                      styles.cellBadge,
+                      isPresent && { backgroundColor: colors.accentContainer },
+                      isAbsent && { backgroundColor: colors.dangerContainer },
+                      isHolidayOrOff && { backgroundColor: colors.surfaceVariant },
+                    ]}
+                  >
+                    {isPresent && <Ionicons name="checkmark" size={12} color={colors.accent} />}
+                    {isAbsent && <Ionicons name="close" size={12} color={colors.danger} />}
+                    {isHolidayOrOff && <Text variant="caption" color="muted">—</Text>}
+                  </View>
+                  <Text
+                    variant="caption"
+                    color={isSelected ? 'primary' : isAbsent ? 'danger' : 'secondary'}
+                    weight={isSelected ? '700' : '500'}
+                    style={{ fontSize: 10, marginTop: 2 }}
+                  >
+                    {item.dayNumber}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ) : (
           <View style={styles.emptyCalendarContainer}>
-            <Ionicons name="calendar-outline" size={32} color={colors.textMuted} style={{ marginBottom: 6 }} />
+            <Ionicons name="calendar-outline" size={30} color={colors.textMuted} style={{ marginBottom: 6 }} />
             <Text variant="bodySmall" color="secondary" align="center" weight="600">
               No Attendance Logs Recorded
             </Text>
             <Text variant="caption" color="muted" align="center" style={{ marginTop: 2 }}>
-              Daily register logs have not been published for this month.
+              Daily register records have not been published for this month.
             </Text>
           </View>
         )}
@@ -420,9 +412,9 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
             {
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              borderRadius: borderRadius.lg,
+              borderRadius: borderRadius.md,
               padding: spacing.cardPadding,
-              marginBottom: spacing.lg,
+              marginBottom: spacing.md,
               ...shadows.sm,
             },
           ]}
@@ -430,7 +422,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
           <View style={styles.inspectorTopRow}>
             <View>
               <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.6 }}>
-                SELECTED DATE INSPECTION
+                SELECTED DATE RECORD
               </Text>
               <Text variant="h3" color="primary" weight="700" style={{ marginTop: 2 }}>
                 {selectedDay.dayNumber} {monthlyData?.monthName || activeMonthKey}
@@ -443,23 +435,15 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
                   ? 'Present'
                   : selectedDay.status === 'ABSENT'
                   ? 'Absent'
-                  : selectedDay.status === 'LATE'
-                  ? 'Late'
-                  : selectedDay.status === 'EXCUSED'
-                  ? 'Excused Leave'
                   : selectedDay.status === 'HOLIDAY'
-                  ? 'Official Holiday'
-                  : 'Institute Closed'
+                  ? 'Holiday'
+                  : 'Off Day'
               }
               variant={
                 selectedDay.status === 'PRESENT'
-                  ? 'success'
+                  ? 'accent'
                   : selectedDay.status === 'ABSENT'
                   ? 'danger'
-                  : selectedDay.status === 'LATE'
-                  ? 'warning'
-                  : selectedDay.status === 'EXCUSED'
-                  ? 'primary'
                   : 'neutral'
               }
               size="md"
@@ -470,10 +454,10 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
 
           <View style={styles.metaRow}>
             <Text variant="caption" color="muted">
-              Academic Programme:
+              Academic Session:
             </Text>
             <Text variant="caption" color="primary" weight="600">
-              Fundemics Regular Academic Batch
+              Classroom Lecture & Problem Session
             </Text>
           </View>
 
@@ -482,7 +466,7 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
               Verification Mode:
             </Text>
             <Text variant="caption" color="secondary" weight="600">
-              {selectedDay.status === 'PRESENT' ? 'Classroom Biometric Log' : 'Official Attendance Log'}
+              {selectedDay.status === 'PRESENT' ? 'Verified Biometric Attendance' : 'Institutional Daily Register'}
             </Text>
           </View>
 
@@ -496,6 +480,69 @@ export const StudentAttendanceScreen: React.FC<StudentAttendanceScreenProps> = (
               </Text>
             </View>
           )}
+        </View>
+      )}
+
+      {/* Chronological Daily Attendance Log (Sequential list) */}
+      {records.length > 0 && (
+        <View
+          style={[
+            styles.logCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderRadius: borderRadius.md,
+              padding: spacing.cardPadding,
+              marginBottom: spacing.md,
+            },
+          ]}
+        >
+          <Text variant="caption" color="secondary" weight="700" style={{ letterSpacing: 0.8, marginBottom: 8 }}>
+            CHRONOLOGICAL SESSION LOG
+          </Text>
+
+          {records
+            .filter((r) => r.status !== 'OFF' && r.status !== 'HOLIDAY')
+            .slice(-10)
+            .reverse()
+            .map((item, idx, arr) => (
+              <View
+                key={`log-${item.date}`}
+                style={[
+                  styles.logRow,
+                  idx < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+                ]}
+              >
+                <View style={styles.logLeft}>
+                  <Text variant="body" color="primary" weight="600" style={{ fontSize: 13 }}>
+                    {item.date}
+                  </Text>
+                  <Text variant="caption" color="muted">
+                    Day {item.dayNumber} • Regular Session
+                  </Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.logStatusBadge,
+                    {
+                      backgroundColor: item.status === 'PRESENT' ? colors.accentContainer : colors.dangerContainer,
+                    },
+                  ]}
+                >
+                  <Text
+                    variant="caption"
+                    style={{
+                      color: item.status === 'PRESENT' ? colors.accent : colors.danger,
+                      fontWeight: '700',
+                      fontSize: 10,
+                    }}
+                  >
+                    {item.status}
+                  </Text>
+                </View>
+              </View>
+            ))}
         </View>
       )}
     </ScrollView>
@@ -564,7 +611,7 @@ const styles = StyleSheet.create({
     width: '14.285%', // 7 columns
     alignItems: 'center',
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   selectedCell: {
     borderWidth: 1,
@@ -596,8 +643,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   emptyCalendarContainer: {
-    paddingVertical: 28,
+    paddingVertical: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logCard: {
+    borderWidth: 1,
+  },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  logLeft: {
+    flex: 1,
+  },
+  logStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
   },
 });
